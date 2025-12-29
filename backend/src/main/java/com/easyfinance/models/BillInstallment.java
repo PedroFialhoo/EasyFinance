@@ -1,32 +1,28 @@
 package com.easyfinance.models;
 
+import java.time.LocalDate;
+
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+@Entity
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
-@Entity
-public class Card {
+public class BillInstallment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
-    private String number;
     @ManyToOne
-    @JoinColumn(name = "holder_id")
-    private Holder holder;
-    @ManyToOne
-    @JoinColumn(name = "bank_id")
-    private Bank bank;
-    private Boolean active;
-    @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
+    @JoinColumn(name = "bill_id")
+    private Bill bill;
+    private int installmentNumber; 
+    private double value;
+    private LocalDate dueDate;
+    private LocalDate paymentDate;
 }

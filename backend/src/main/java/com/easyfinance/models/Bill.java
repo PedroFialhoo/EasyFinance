@@ -27,9 +27,6 @@ public class Bill {
     @ManyToOne
     @JoinColumn(name = "category_id")
     private Category category;
-    private double value;
-    private LocalDate dueDate;
-    private LocalDate paymentDate;
     @Enumerated(EnumType.STRING)
     private TypePayment typePayment;
     @ManyToOne
@@ -39,4 +36,5 @@ public class Bill {
     @JoinColumn(name = "user_id")
     private User user;
     private int numberInstallments;
+    private double totalValue;    
 }
