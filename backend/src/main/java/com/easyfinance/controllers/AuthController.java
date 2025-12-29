@@ -28,7 +28,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginDto dto) {
         if (UserSession.getId() != null) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("User already logged in");
+            UserSession.setId(null);
         }
         User user = authService.login(dto.getEmail(), dto.getPassword());
         if (user == null) {
