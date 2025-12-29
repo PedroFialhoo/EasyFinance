@@ -2,7 +2,7 @@
 import { Input } from "@/components/ui/input"
 import logo from "/src/assets/images/logo-w.png"
 import { Button } from "@/components/ui/button"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { Eye, EyeClosed, Lock, Mail } from "lucide-react"
 import { useState } from "react"
 import { api } from "@/services/api"
@@ -14,7 +14,7 @@ export default function Login() {
     const [password, setPassword] = useState("")
     const [message, setMessage] = useState("")
     const [statusMessage, setStatusMessage] = useState(null)
-
+    const navigate = useNavigate()
     const toggleShow = () =>{
         setShow(!show)
     }
@@ -29,6 +29,7 @@ export default function Login() {
         .then(response => {
             setMessage("Login bem sucedido")
             setStatusMessage(true)
+            navigate("/app/home")
         })
         .catch(err => {
             setMessage("Erro ao realizar login")
