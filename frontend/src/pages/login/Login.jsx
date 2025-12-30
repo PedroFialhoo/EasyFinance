@@ -40,7 +40,7 @@ export default function Login() {
     return (
         <div className="flex h-screen overflow-hidden">
             <div className="h-full bg-green-800 w-[40%] flex items-center justify-center">
-                <img src={logo} alt="logo EasyFinance"/>
+                <img src={logo} alt="logo EasyFinance" className="w-[90%]"/>
             </div>
             <div className="flex flex-col justify-center items-center w-[60%] gap-22"> 
                 <h1 className="text-5xl font-normal text-green-800 w-[50%]">Cuidar do seu dinheiro nunca foi tão simples.</h1>

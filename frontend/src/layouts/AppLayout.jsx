@@ -11,7 +11,7 @@ export default function AppLayout(){
     { to: "/", icon: <LogOut />, name: "Sair" },
     ]
     return(
-        <div className="flex flex-row">
+        <div className="flex flex-col overflow-x-hidden">
             <Sidebar links={links} />
             <Outlet />
         </div>        

@@ -1,8 +1,11 @@
 package com.easyfinance.controllers;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,5 +27,11 @@ public class BankController {
             return ResponseEntity.status(HttpStatus.CONFLICT).body("Bank not created");
         } 
         return ResponseEntity.status(HttpStatus.OK).body("Bank created");
+    }
+
+    @GetMapping("/getAll")
+    public ResponseEntity<?> getAll() {
+        List<BankDto> banks = bankService.getAll();
+        return ResponseEntity.status(HttpStatus.OK).body(banks);
     }
 }

@@ -1,5 +1,7 @@
 package com.easyfinance.controllers;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -10,6 +12,8 @@ import com.easyfinance.dtos.CardDto;
 import com.easyfinance.services.CardService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.GetMapping;
+
 
 
 @RestController
@@ -26,5 +30,12 @@ public class CardController {
         } 
         return ResponseEntity.status(HttpStatus.OK).body("Card created");
     }
+
+    @GetMapping("/getAll")
+    public ResponseEntity<?> getAll() {
+        List<CardDto> cards = cardService.getAll();
+        return ResponseEntity.status(HttpStatus.OK).body(cards);
+    }
+    
     
 }
