@@ -39,6 +39,7 @@ public class AuthController {
         Map<String, Object> response = new HashMap<>();
         response.put("message", "Successful login");
         response.put("userId", user.getId());
+        System.out.println("User: " + UserSession.getId() + " login");
         return ResponseEntity.ok(response);
     }    
 
