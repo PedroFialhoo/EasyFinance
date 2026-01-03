@@ -1,5 +1,5 @@
 import Sidebar from "@/components/myComponents/Sidebar";
-import { CreditCard, House, LogOut, Receipt, Settings } from "lucide-react";
+import { CreditCard, House, Landmark, LogOut, Receipt, Settings, User } from "lucide-react";
 import { Outlet } from "react-router-dom";
 
 export default function AppLayout(){
@@ -7,6 +7,8 @@ export default function AppLayout(){
     { to: "/app/home", icon: <House />, name: "Home" },
     { to: "/app/bills", icon: <Receipt />, name: "Contas" },
     { to: "/app/cards", icon: <CreditCard />, name: "Cartões" },
+    { to: "/app/banks", icon: <Landmark />, name: "Bancos" },
+    { to: "/app/holders", icon: <User />, name: "Titulares" },
     { to: "/app/settings", icon: <Settings />, name: "Configurações" },
     { to: "/", icon: <LogOut />, name: "Sair" },
     ]

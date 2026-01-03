@@ -1,4 +1,4 @@
-export default function CreditCard({bank = "", name = "", number = ""}){  
+export default function CreditCard({id = "", bank = "", name = "", number = "", edit = false, onEdit, setCard}) {  
     const coresBancos = {
         nubank: "bg-[#8A05BE]",
         itaú: "bg-[#FF6200]",
@@ -11,8 +11,15 @@ export default function CreditCard({bank = "", name = "", number = ""}){
 
     const corBg = coresBancos[bank.toLowerCase()] || "bg-slate-700"
 
+    const editCard = () => {
+        if(edit && onEdit){
+            setCard({id, bank, name, number})
+            onEdit()
+        }
+    }
+
     return (
-        <div className={`${corBg} w-84 min-h-48 rounded-2xl p-6 text-white shadow-2xl flex flex-col justify-between transition-all duration-500 hover:-translate-y-3`}>
+        <div className={`${corBg} w-84 min-h-48 rounded-2xl p-6 text-white shadow-2xl flex flex-col justify-between transition-all duration-500 hover:-translate-y-3`} onClick={editCard}>
             <div className="flex justify-between items-start">
                 <span className="font-bold text-lg italic tracking-tight capitalize">{bank}</span>
                 <div className="w-10 h-8 bg-yellow-400/80 rounded-md shadow-inner"></div>

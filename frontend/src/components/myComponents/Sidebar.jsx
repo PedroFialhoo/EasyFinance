@@ -2,7 +2,7 @@ import { NavLink } from "react-router-dom"
 
 function Sidebar({ links = [] }) {
     return (
-        <nav className="bg-green-800 flex flex-row w-screen max-h-24 p-4 items-center justify-between">
+        <nav className="bg-green-800 flex flex-row w-screen min-h-24 p-4 items-center justify-between">
             <img src="/src/assets/images/logo-w.png" alt="Logo" className="w-[9%] h-[9%] self-baseline"/>
             <ul className="flex flex-row gap-10 mr-4">
                 {links.map((link) => (

@@ -79,4 +79,50 @@ public class CardService {
         
         return cardsDto;
     }
+
+    public CardDto getById(int id){
+        Optional<Card> optCard = cardRepository.findById(id);
+        if(optCard != null){
+            Card card = optCard.get();
+            CardDto cardDto = new CardDto();
+            HolderDto holderDto = new HolderDto();
+            BankDto bankDto = new BankDto();
+            holderDto.setName(card.getHolder().getName());
+            holderDto.setId(card.getHolder().getId());
+            bankDto.setName(card.getBank().getName());
+            bankDto.setId(card.getBank().getId());
+            cardDto.setHolder(holderDto);
+            cardDto.setBank(bankDto);
+            cardDto.setNumber(card.getNumber());
+            cardDto.setId(card.getId());
+            cardDto.setActive(card.getActive());
+            return cardDto;
+        } 
+        
+        return null;
+    }
+
+    public boolean edit(CardDto dto){
+        Optional<Card> optCard = cardRepository.findById(dto.getId());
+        if(optCard == null){
+            return false;
+        }
+        Card card = optCard.get();
+
+        Optional<Bank> optBank = bankRepository.findById(dto.getBank().getId());
+        Optional<Holder> optHolder = holderRepository.findById(dto.getHolder().getId());
+        if(optBank == null || optHolder == null){
+            return false;
+        }
+
+        card.setBank(optBank.get());
+        card.setHolder(optHolder.get());
+                
+        card.setNumber(dto.getNumber());
+        card.setActive(dto.getActive());
+
+        cardRepository.save(card);
+
+        return true;
+    }
 }

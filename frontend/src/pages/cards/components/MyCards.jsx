@@ -3,7 +3,7 @@ import CreditCard from "./CreditCard";
 import { useEffect, useState } from "react";
 import { api } from "@/services/api"
 
-export default function MyCards({onAdd, reload}){
+export default function MyCards({onAdd, reload, onEdit, setCard}) {
 
     const [cards, setCards] = useState([])
 
@@ -21,7 +21,7 @@ export default function MyCards({onAdd, reload}){
             </div>
             <div className="flex flex-wrap gap-6">
                 {cards.map((card)=>(
-                    <CreditCard bank={card.bank.name} name={card.holder.name} number={card.number}/>
+                    <CreditCard id={card.id} bank={card.bank.name} name={card.holder.name} number={card.number} edit={true} onEdit={onEdit} setCard={setCard}/>
                 ))}
             </div>                    
         </div>
