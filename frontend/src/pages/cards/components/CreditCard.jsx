@@ -6,7 +6,7 @@ export default function CreditCard({id = "", bank = "", name = "", number = "", 
         santander: "bg-[#EC0000]",
         inter: "bg-[#FF7A00]",
         caixa: "bg-[#005CA9]",
-        bb: "bg-[#FCF800] text-blue-900",
+        bb: "bg-[#FCF800] text-blue-900!",
     }
 
     const corBg = coresBancos[bank.toLowerCase()] || "bg-slate-700"
