@@ -9,12 +9,17 @@ import org.springframework.stereotype.Service;
 
 import com.easyfinance.dtos.BankDto;
 import com.easyfinance.models.Bank;
+import com.easyfinance.models.Card;
 import com.easyfinance.repositories.BankRepository;
+import com.easyfinance.repositories.CardRepository;
 
 @Service
 public class BankService {
     @Autowired
     private BankRepository bankRepository;
+    
+    @Autowired
+    private CardRepository cardRepository;
 
     public boolean create(BankDto dto){
         Bank bank = new Bank();
@@ -43,5 +48,26 @@ public class BankService {
             dtos.add(dto);
         }
         return dtos;
+    }
+
+    public boolean edit(BankDto dto){
+        Optional<Bank> optBank = bankRepository.findById(dto.getId());
+        if(optBank.isPresent()){
+            Bank bank = optBank.get();
+            bank.setName(dto.getName());
+
+            bankRepository.save(bank);
+            return true;
+        }
+        return false;
+    }
+
+    public boolean delete(int id){
+        List<Optional<Card>> optCards = cardRepository.findByBankId(id);
+        if(optCards.isEmpty()){
+            bankRepository.deleteById(id);
+            return true;
+        }
+        return false;
     }
 }

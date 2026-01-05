@@ -11,8 +11,11 @@ import org.springframework.web.bind.annotation.RestController;
 import com.easyfinance.dtos.HolderDto;
 import com.easyfinance.services.HolderService;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 
 
 
@@ -35,6 +38,24 @@ public class HolderController {
     public ResponseEntity<?> getAll() {
         List<HolderDto> holders = holderService.getAll();
         return ResponseEntity.status(HttpStatus.OK).body(holders);
+    }
+
+    @PutMapping("/edit")
+    public ResponseEntity<?> edit(@RequestBody HolderDto dto) {
+        boolean success = holderService.edit(dto);
+        if(!success){
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Holder not edited");
+        } 
+        return ResponseEntity.status(HttpStatus.OK).body("Holder edited");
+    }
+
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<?> delete(@PathVariable int id) {
+        boolean success = holderService.delete(id);
+        if(!success){
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Holder not deleted");
+        } 
+        return ResponseEntity.status(HttpStatus.OK).body("Holder deleted");
     }
     
 }
