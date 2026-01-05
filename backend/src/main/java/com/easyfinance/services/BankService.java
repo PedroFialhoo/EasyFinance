@@ -26,7 +26,7 @@ public class BankService {
 
     public Bank getById(Integer id){
         Optional<Bank> optBank = bankRepository.findById(id);
-        if(optBank != null){
+        if(optBank.isPresent()){
             Bank bank = optBank.get();
             return bank;
         }

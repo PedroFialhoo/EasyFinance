@@ -26,7 +26,7 @@ public class HolderService {
 
     public Holder getById(Integer id){
         Optional<Holder> optHolder = holderRepository.findById(id);
-        if(optHolder != null){
+        if(optHolder.isPresent()){
             Holder holder = optHolder.get();
             return holder;
         }

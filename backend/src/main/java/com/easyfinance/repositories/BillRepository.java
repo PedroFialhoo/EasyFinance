@@ -11,4 +11,6 @@ import com.easyfinance.models.Bill;
 @Repository
 public interface BillRepository extends JpaRepository<Bill, Integer> {
     Optional<List<Bill>> findByUserId(Integer userId);
+
+    Optional<List<Bill>> findByCardId(Integer cardId);
 }

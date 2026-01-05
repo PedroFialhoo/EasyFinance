@@ -11,11 +11,13 @@ import com.easyfinance.dtos.BankDto;
 import com.easyfinance.dtos.CardDto;
 import com.easyfinance.dtos.HolderDto;
 import com.easyfinance.models.Bank;
+import com.easyfinance.models.Bill;
 import com.easyfinance.models.Card;
 import com.easyfinance.models.Holder;
 import com.easyfinance.models.User;
 import com.easyfinance.models.UserSession;
 import com.easyfinance.repositories.BankRepository;
+import com.easyfinance.repositories.BillRepository;
 import com.easyfinance.repositories.CardRepository;
 import com.easyfinance.repositories.HolderRepository;
 
@@ -30,12 +32,15 @@ public class CardService {
     @Autowired
     private BankRepository bankRepository;
 
+    @Autowired
+    private BillRepository billRepository;
+
     public boolean create(CardDto dto){
         Card card = new Card();
 
         Optional<Bank> optBank = bankRepository.findById(dto.getBank().getId());
         Optional<Holder> optHolder = holderRepository.findById(dto.getHolder().getId());
-        if(optBank == null || optHolder == null){
+        if(optBank.isEmpty() || optHolder.isEmpty() ){
             return false;
         }
 
@@ -57,7 +62,7 @@ public class CardService {
     public List<CardDto> getAll(){
         List<Optional<Card>> optCards = cardRepository.findByUserId(UserSession.getId());
         List<CardDto> cardsDto = new ArrayList<>();
-        if(optCards != null){
+        if(!optCards.isEmpty()){
           for (Optional<Card> optCard : optCards) {
                 Card card = optCard.get();
                 if(card == null){
@@ -82,7 +87,7 @@ public class CardService {
 
     public CardDto getById(int id){
         Optional<Card> optCard = cardRepository.findById(id);
-        if(optCard != null){
+        if(optCard.isPresent()){
             Card card = optCard.get();
             CardDto cardDto = new CardDto();
             HolderDto holderDto = new HolderDto();
@@ -104,14 +109,14 @@ public class CardService {
 
     public boolean edit(CardDto dto){
         Optional<Card> optCard = cardRepository.findById(dto.getId());
-        if(optCard == null){
+        if(optCard.isEmpty()){
             return false;
         }
         Card card = optCard.get();
 
         Optional<Bank> optBank = bankRepository.findById(dto.getBank().getId());
         Optional<Holder> optHolder = holderRepository.findById(dto.getHolder().getId());
-        if(optBank == null || optHolder == null){
+        if(optBank.isEmpty() || optHolder.isEmpty()){
             return false;
         }
 
@@ -123,6 +128,21 @@ public class CardService {
 
         cardRepository.save(card);
 
+        return true;
+    }
+
+    public boolean delete(int id){
+        Optional<Card> optCard = cardRepository.findById(id);
+        if(optCard.isEmpty()){
+            return false;
+        }
+
+        Optional<List<Bill>> optBills = billRepository.findByCardId(id);
+        if(optBills.isPresent() && !optBills.get().isEmpty()){
+            return false; 
+        }
+
+        cardRepository.delete(optCard.get());
         return true;
     }
 }

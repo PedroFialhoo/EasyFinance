@@ -12,6 +12,7 @@ import com.easyfinance.dtos.CardDto;
 import com.easyfinance.services.CardService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -54,6 +55,14 @@ public class CardController {
         } 
         return ResponseEntity.status(HttpStatus.OK).body("Card edited");
     }
-    
+
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<?> delete(@PathVariable int id) {
+        boolean success = cardService.delete(id);
+        if(!success){
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Card not deleted");
+        } 
+        return ResponseEntity.status(HttpStatus.OK).body("Card deleted");
+    }
     
 }
