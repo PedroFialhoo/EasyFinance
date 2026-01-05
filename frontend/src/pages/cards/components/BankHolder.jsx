@@ -101,7 +101,10 @@ export default function BankHolder() {
         } 
       }
     })
-    .finally(refreshCards)
+    .finally(() => {
+      refreshCards()
+      setName("")
+    })
   }
 
   const deleteFunc = () => {
@@ -126,7 +129,10 @@ export default function BankHolder() {
         setStatusMessage(false)
       } 
     })
-    .finally(refreshCards)
+    .finally(() => {
+      refreshCards()
+      setIsActiveDelete(false)
+    })
   }
 
   return (
@@ -157,6 +163,7 @@ export default function BankHolder() {
           <Button type="button" className="bg-green-800 self-center mt-3 text-lg font-normal hover:bg-green-900 hover:shadow-2xl" onClick={() => {
             setIsActiveAdd(!isActiveAdd)
             setType('bank')
+            setName("")
             }}>Adicionar Banco <span className="font-semibold text-xl">+</span></Button> 
         </div>
         <div className="bg-slate-100 rounded-2xl w-[40%] p-4 shadow-md flex flex-col">
@@ -180,6 +187,7 @@ export default function BankHolder() {
           <Button type="button" className="bg-green-800 self-center mt-3 text-lg font-normal hover:bg-green-900 hover:shadow-2xl" onClick={() => {
             setIsActiveAdd(!isActiveAdd)
             setType('holder')
+            setName("")
           }}>Adicionar Titular <span className="font-semibold text-xl">+</span></Button> 
         </div>
       </div>  
