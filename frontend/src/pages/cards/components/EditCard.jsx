@@ -2,7 +2,7 @@
 /* eslint-disable no-unused-vars */
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CreditCard as CreditCardIcon, Landmark, User, X } from "lucide-react";
+import { CreditCard as CreditCardIcon, Landmark, Trash, User, X } from "lucide-react";
 import { use, useEffect, useState } from "react";
 import CreditCard from "./CreditCard";
 import {
@@ -78,10 +78,27 @@ export default function EditCard({onClose, onCreated, card}){
             setStatusMessage(false)
         })
     }
+
+    const deleteCard = () =>{
+        api.delete(`/card/delete/${card.id}`)
+        .then(response => {
+            setMessage("Cartão excluido com sucesso!")
+            onCreated() 
+            onClose()
+        })
+        .catch(err => {
+            setMessage("Erro ao excluir cartão, caso tenha contas registradas com ele desative-o!")
+            setStatusMessage(false)
+            console.log(err)
+        })
+    }
     if (!number || !selectedBank || !selectedHolder) return null
     return(
         <div className="flex flex-col">
-            <X onClick={onClose} className="mb-3 self-end hover:text-red-700 m-4"/>
+            <div className="flex w-full justify-between p-4">
+               <Trash onClick={deleteCard} className=" hover:text-red-700"/>
+                <X onClick={onClose} className=" hover:text-red-700 "/> 
+            </div>            
             <form action="" className="m-14 flex flex-col gap-6">
                 <div className="relative w-full">
                     <CreditCardIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-green-800" />

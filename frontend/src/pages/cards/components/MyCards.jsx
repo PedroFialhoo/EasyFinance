@@ -17,7 +17,7 @@ export default function MyCards({onAdd, reload, onEdit, setCard}) {
         <div className="bg-slate-200 rounded-xl p-4">
             <div className="p-4 mb-3 flex justify-between">
                 <h1 className="font-bold text-2xl text-green-800">Meus Cartões</h1>
-                 <Button type="button" className="bg-green-800 self-start text-lg font-normal hover:bg-green-900 hover:shadow-2xl" onClick={onAdd}>Adicionar Cartão <span className="font-semibold text-xl">+</span></Button> 
+                <Button type="button" className="bg-green-800 self-start text-lg font-normal hover:bg-green-900 hover:shadow-2xl" onClick={onAdd}>Adicionar Cartão <span className="font-semibold text-xl">+</span></Button> 
             </div>
             <div className="flex flex-wrap gap-6">
                 {cards.map((card)=>(

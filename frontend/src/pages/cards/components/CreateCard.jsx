@@ -33,7 +33,7 @@ export default function CreateCard({onClose, onCreated}){
     useEffect(() => {
         api.get("/holder/getAll")
             .then(response => setHolders(response.data))
-            .catch(err => console.log("Erro:", err));
+            .catch(err => console.log("Erro:", err)); 
     }, []);
 
     const createCard = () =>{

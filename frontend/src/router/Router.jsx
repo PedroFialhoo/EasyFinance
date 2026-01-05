@@ -5,34 +5,41 @@ import Home from "@/pages/home/Home";
 import Bills from "@/pages/bills/Bills";
 import Cards from "@/pages/cards/Cards";
 import Settings from "@/pages/settings/Settings";
+import BankHolder from "@/pages/cards/components/BankHolder";
 
 const Router = createBrowserRouter([
-    {
-        path: "/",
-        element: <Login />
-    },
-    {
-        path: "/app",
-        element: <AppLayout />,
-        children:[
-            {
-                path: "home",
-                element: <Home />
-            },
-            {
-                path: "bills",
-                element: <Bills />
-            },
-            {
-                path: "cards",
-                element: <Cards />
-            },
-            {
-                path: "settings",
-                element: <Settings />
-            }
-        ]
-    }
-])
+  {
+    path: "/",
+    element: <Login />,
+  },
+  {
+    path: "/app",
+    element: <AppLayout />,
+    children: [
+      {
+        path: "home",
+        element: <Home />,
+      },
+      {
+        path: "bills",
+        element: <Bills />,
+      },
+      {
+        path: "cards",
+        element: <Cards />,
+        children: [
+          {
+            path: "banks-holders",
+            element: <BankHolder />,
+          },
+        ],
+      },
+      {
+        path: "settings",
+        element: <Settings />,
+      },
+    ],
+  },
+]);
 
-export default Router
+export default Router;
