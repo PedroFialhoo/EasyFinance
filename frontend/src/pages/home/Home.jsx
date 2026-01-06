@@ -1,7 +1,9 @@
+import Revenue from "./components/Revenue";
+
 export default function Home(){
     return(
-        <div>
-            <h1>Home</h1>
+        <div className="p-8">
+            <Revenue />
         </div>
     )
 }

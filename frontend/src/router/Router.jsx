@@ -6,6 +6,7 @@ import Bills from "@/pages/bills/Bills";
 import Cards from "@/pages/cards/Cards";
 import Settings from "@/pages/settings/Settings";
 import BankHolder from "@/pages/cards/components/BankHolder";
+import Category from "@/pages/bills/components/Category";
 
 const Router = createBrowserRouter([
   {
@@ -23,6 +24,12 @@ const Router = createBrowserRouter([
       {
         path: "bills",
         element: <Bills />,
+        children: [
+          {
+            path: "categories",
+            element: <Category />,
+          },
+        ],
       },
       {
         path: "cards",

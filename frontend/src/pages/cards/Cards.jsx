@@ -15,7 +15,7 @@ export default function Cards() {
   const navigate = useNavigate()
 
   return (
-    <div className="p-8 flex flex-col gap-7 ">
+    <div className="p-8 flex flex-col gap-7">
       <div>
         <Button
           type="button"
