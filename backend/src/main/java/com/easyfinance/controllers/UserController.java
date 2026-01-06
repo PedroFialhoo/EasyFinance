@@ -6,11 +6,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.easyfinance.dtos.RevenueDto;
 import com.easyfinance.dtos.UserDto;
 import com.easyfinance.services.UserService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+
 
 
 
@@ -39,4 +42,11 @@ public class UserController {
         
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User not update!");
     }
+
+    @GetMapping("/revenue")
+    public ResponseEntity<?> getRevenue() {
+        RevenueDto revenue = userService.getRevenue();
+        return ResponseEntity.status(HttpStatus.OK).body(revenue);
+    }
+    
 }
