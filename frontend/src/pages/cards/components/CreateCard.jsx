@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CreditCard as CreditCardIcon, Landmark, User, X } from "lucide-react";
+import { CreditCard as CreditCardIcon, Landmark, Plus, User, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import CreditCard from "./CreditCard";
 import {
@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { api } from "@/services/api"
+import { useNavigate } from "react-router-dom";
 
 export default function CreateCard({onClose, onCreated}){
     const [number, setNumber] = useState()
@@ -23,6 +24,7 @@ export default function CreateCard({onClose, onCreated}){
     const selectedHolderObj = holders.find(h => h.id.toString() === selectedHolder)
     const [message, setMessage] = useState("")
     const [statusMessage, setStatusMessage] = useState(null)
+    const navigate = useNavigate()
 
     useEffect(() => {
         api.get("/bank/getAll")
@@ -68,32 +70,44 @@ export default function CreateCard({onClose, onCreated}){
                     <CreditCardIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-green-800" />
                     <Input value={number} type="text" maxLength={4} placeholder="Numero do Cartão (4 últimos)" className="h-10 pl-10 pr-10 text-base!" onChange={(e) => setNumber(e.target.value.replace(/\D/g, ""))}/>
                 </div>
-                <div className="relative w-full">
-                    <Landmark className="absolute left-3 top-1/2 -translate-y-1/2 text-green-800" />
-                    <Select value={selectedBank} onValueChange={setSelectedBank}>
-                        <SelectTrigger className="h-10 pl-10 pr-10 text-base! w-full capitalize">
-                            <SelectValue placeholder="Selecione um Banco" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {banks.map((bank)=>(
-                                <SelectItem key={bank.id} value={bank.id.toString()} className="capitalize">{bank.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className="relative w-full">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 text-green-800" />
-                    <Select value={selectedHolder} onValueChange={setSelectedHolder}>
-                        <SelectTrigger className="h-10 pl-10 pr-10 text-base! w-full capitalize">
-                            <SelectValue placeholder="Selecione um Titular" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {holders.map((holder)=>(
-                                <SelectItem key={holder.id} value={holder.id.toString()} className="capitalize">{holder.name}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
+                <div className="flex items-center gap-2">
+                    <div className="relative w-full">
+                        <Landmark className="absolute left-3 top-1/2 -translate-y-1/2 text-green-800" />
+                        <Select value={selectedBank} onValueChange={setSelectedBank}>
+                            <SelectTrigger className="h-10 pl-10 pr-10 text-base! w-full capitalize">
+                                <SelectValue placeholder="Selecione um Banco" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {banks.map((bank)=>(
+                                    <SelectItem key={bank.id} value={bank.id.toString()} className="capitalize">{bank.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>   
+                    <Plus className="text-green-800 hover:text-green-950" onClick={() => {
+                        navigate('/app/cards/banks-holders')
+                        onClose()
+                    }}/>
+                </div>  
+                <div className="flex items-center gap-2">
+                    <div className="relative w-full">
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 text-green-800" />
+                        <Select value={selectedHolder} onValueChange={setSelectedHolder}>
+                            <SelectTrigger className="h-10 pl-10 pr-10 text-base! w-full capitalize">
+                                <SelectValue placeholder="Selecione um Titular" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {holders.map((holder)=>(
+                                    <SelectItem key={holder.id} value={holder.id.toString()} className="capitalize">{holder.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div> 
+                    <Plus className="text-green-800 hover:text-green-950" onClick={() => {
+                        navigate('/app/cards/banks-holders')
+                        onClose()
+                    }}/>
+                </div>                              
                 <div className="self-center pointer-events-none">
                     <CreditCard number={number} name={selectedHolderObj?.name} bank={selectedBankObj?.name}/>
                 </div>
