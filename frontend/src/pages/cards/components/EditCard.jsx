@@ -25,16 +25,18 @@ export default function EditCard({onClose, onCreated, card}){
     const selectedHolderObj = holders.find(h => h.id.toString() === selectedHolder)
     const [message, setMessage] = useState("")
     const [statusMessage, setStatusMessage] = useState(null)
+    const [pay, setPay] = useState(false)
+    const [loadingPay, setLoadingPay] = useState(false)
     useEffect(() => {
         api.get("/bank/getAll")
             .then(response => setBanks(response.data))
-            .catch(err => console.log("Erro:", err));
+            .catch(err => console.log("Erro:", err))
     }, []);
 
     useEffect(() => {
         api.get("/holder/getAll")
             .then(response => setHolders(response.data))
-            .catch(err => console.log("Erro:", err));
+            .catch(err => console.log("Erro:", err))
     }, []);
 
     useEffect(() => {
@@ -45,14 +47,20 @@ export default function EditCard({onClose, onCreated, card}){
                 setSelectedHolder(response.data.holder.id.toString())
                 setIsActived(response.data.active)
             })
-            .catch(err => console.log("Erro:", err));
+            .catch(err => console.log("Erro:", err))
     }, []);   
+
+    useEffect(() => {        
+        api.get(`/card/checkMonthlyInvoice/${card.id}`)
+            .then(response => setPay(true))
+            .catch(err => console.log("Erro:", err))            
+    }, []);
 
     useEffect(() => {
         console.log(number, selectedBank, selectedHolder, isActived)
     }, [number, selectedBank, selectedHolder, isActived])
 
-    const createCard = () =>{
+    const editCard = () =>{
         api.put('/card/edit',{
             id: card.id,
             number: number,
@@ -92,7 +100,31 @@ export default function EditCard({onClose, onCreated, card}){
             console.log(err)
         })
     }
-    if (!number || !selectedBank || !selectedHolder) return null
+
+    const payCard = () => {
+        if (loadingPay) return
+
+        setLoadingPay(true)
+        api.post("/card/payCard",{
+            id: card.id
+        })
+            .then(response => {
+                setMessage("Cartão pago com sucesso!")
+                setStatusMessage(true)
+                setPay(false)
+            })
+            .catch(err => {
+                console.log("Erro:", err)
+                setMessage("Erro ao pagar cartão")
+                setStatusMessage(false)
+            })
+            .finally(() => setLoadingPay(false))
+    }
+
+    if (!number || !selectedBank || !selectedHolder){
+        return <div />;
+    }
+
     return(
         <div className="flex flex-col">
             <div className="flex w-full justify-between p-4">
@@ -133,11 +165,29 @@ export default function EditCard({onClose, onCreated, card}){
                 <div className="self-center pointer-events-none">
                     <CreditCard number={number} name={selectedHolderObj?.name} bank={selectedBankObj?.name}/>
                 </div>
-
+                {isActived && (
+                    pay ? (
+                        <Button
+                        type="button"
+                        className="bg-blue-700 text-lg font-normal hover:bg-blue-900 hover:shadow-2xl self-center"
+                        onClick={payCard}
+                        >
+                        Pagar Cartão
+                        </Button>
+                    ) : (
+                        <Button
+                        disabled
+                        type="button"
+                        className="bg-red-800 text-lg font-normal self-center"
+                        >
+                        Cartão Pago
+                        </Button>
+                    )
+                    )}
                 {isActived ? 
                 (<Button type="button" className="bg-red-700 text-lg font-normal hover:bg-red-900 hover:shadow-2xl self-center" onClick={() => setIsActived(!isActived)}>Desativar Cartão</Button> )
                 :(<Button type="button" className="bg-blue-700 text-lg font-normal hover:bg-blue-900 hover:shadow-2xl self-center" onClick={() => setIsActived(!isActived)}>Ativar Cartão</Button> )}
-                <Button type="button" className="bg-green-800 text-lg font-normal hover:bg-green-900 hover:shadow-2xl self-center" onClick={createCard}>Editar Cartão</Button>              
+                <Button type="button" className="bg-green-800 text-lg font-normal hover:bg-green-900 hover:shadow-2xl self-center" onClick={editCard}>Editar Cartão</Button>              
                 
                 {message && (
                     <span className={statusMessage ? "text-green-600 self-center text-xl font-semibold" : "text-red-600 self-center text-xl font-semibold"}>

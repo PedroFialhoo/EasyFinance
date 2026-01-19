@@ -12,7 +12,7 @@ import BillCard from "./BillCard";
 import { ArrowLeft, ArrowRight, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
-export default function MyBills({ onAdd, reload }){
+export default function MyBills({ onAdd, reload, onEdit, setBill }){
   const [categories, setCategories] = useState([])
   const [selectedCategory, setSelectedCategory] = useState("")
   const [bills, setBills] = useState([])
@@ -122,7 +122,7 @@ export default function MyBills({ onAdd, reload }){
 
         <div className="flex gap-3 flex-wrap pl-10">
           {filteredBills.map((bill) => (
-            <BillCard key={bill.id} bill={bill} />
+            <BillCard key={bill.id} bill={bill} onEdit={onEdit} setBill={setBill} />
           ))}
         </div>
       </div>
