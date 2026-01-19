@@ -206,7 +206,31 @@ public class CardService {
                 }
             }
         }
-
         return paidSomething;
+    }
+
+    public boolean checkMonthlyInvoice(Integer id){
+        Optional<Card> optCard = cardRepository.findById(id);
+        if(optCard.isEmpty()){
+            return false;
+        }
+        Card card = optCard.get();
+        Optional<List<Bill>> optBills = billRepository.findByCardId(card.getId());
+        if (optBills.isEmpty() || optBills.get().isEmpty()) {
+            return false;
+        }
+        List<Bill> bills = optBills.get();
+        YearMonth currentMonth = YearMonth.now();
+        for (Bill bill : bills) {
+            List<BillInstallment> billInstallments = billInstallmentRepository.findByBillId(bill.getId());
+            for (BillInstallment installment : billInstallments) {
+                YearMonth installmentMonth = YearMonth.from(installment.getDueDate());
+                if (installmentMonth.equals(currentMonth) && installment.getPaymentDate() == null){
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }

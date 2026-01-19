@@ -75,8 +75,17 @@ public class CardController {
     public ResponseEntity<?> payCard(@RequestBody CardDto dto) {
         boolean success = cardService.payCard(dto);
         if(!success){
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("Card not payed");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Card not paid");
         } 
-        return ResponseEntity.status(HttpStatus.OK).body("Card payed");
+        return ResponseEntity.status(HttpStatus.OK).body("Card paid");
+    }
+
+    @GetMapping("/checkMonthlyInvoice/{id}")
+    public ResponseEntity<?> checkMonthlyInvoice(@PathVariable int id) {
+        boolean success = cardService.checkMonthlyInvoice(id);
+        if(!success){
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Card without invoices");
+        } 
+        return ResponseEntity.status(HttpStatus.OK).body("Card with invoices");
     }
 }

@@ -22,6 +22,5 @@ public class BillDto {
     
     private LocalDate firstDueDate; 
     //pro caso de contas com uma parcela
-    private LocalDate paymentDate;
     private List<BillInstallmentDto> billInstallments;
 }

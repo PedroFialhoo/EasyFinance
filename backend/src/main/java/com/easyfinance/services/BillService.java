@@ -1,7 +1,6 @@
 package com.easyfinance.services;
 
 import java.time.LocalDate;
-import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -26,6 +25,9 @@ import com.easyfinance.models.User;
 import com.easyfinance.models.UserSession;
 import com.easyfinance.repositories.BillInstallmentRepository;
 import com.easyfinance.repositories.BillRepository;
+import com.easyfinance.repositories.CardRepository;
+
+import jakarta.transaction.Transactional;
 
 @Service
 public class BillService {
@@ -34,6 +36,9 @@ public class BillService {
 
     @Autowired
     private BillInstallmentRepository billInstallmentRepository;
+
+    @Autowired
+    private CardRepository cardRepository;
 
     @Autowired 
     private BillInstallmentService billInstallmentService;
@@ -134,7 +139,7 @@ public class BillService {
             BillInstallmentDto dto = new BillInstallmentDto();
             dto.setId(installment.getId());
             dto.setDueDate(installment.getDueDate());
-            dto.setPaymenDate(installment.getPaymentDate());
+            dto.setPaymentDate(installment.getPaymentDate());
             dto.setInstallmentNumber(installment.getInstallmentNumber());
             dto.setValue(installment.getValue());
             installmentDtos.add(dto);
@@ -173,23 +178,35 @@ public class BillService {
         return billDto;
     }    
 
-    public boolean payBill(BillDto billDto){
-        Optional<Bill> optBill = billRepository.findById(billDto.getId());
-        if(optBill.isEmpty()){
+    @Transactional
+    public boolean payBill(BillInstallmentDto billInstallmentDto){
+        Optional<BillInstallment> optBillInstallment = billInstallmentRepository.findById(billInstallmentDto.getId());
+        if(optBillInstallment.isEmpty()){
             return false;
         }
-        Bill bill = optBill.get();      
-        YearMonth currentMonth = YearMonth.now();
-        boolean paidSomething = false;
-        for (BillInstallment installment : bill.getBillInstallments()) {
-            YearMonth installmentMonth = YearMonth.from(installment.getDueDate());
-            if (installmentMonth.equals(currentMonth) && installment.getPaymentDate() == null){
-                installment.setPaymentDate(LocalDate.now());
-                billInstallmentRepository.save(installment);
-                paidSomething = true;
+        BillInstallment billInstallment = optBillInstallment.get();
+        billInstallment.setPaymentDate(LocalDate.now());
+        billInstallmentRepository.save(billInstallment);
+        Bill bill = billInstallment.getBill();
+        if(bill.getTypePayment() == TypePayment.PENDING){
+            if(billInstallmentDto.getTypePayment() != null && billInstallmentDto.getTypePayment() != TypePayment.PENDING){
+                bill.setTypePayment(billInstallmentDto.getTypePayment());
+                if(billInstallmentDto.getTypePayment() == TypePayment.CREDIT || billInstallmentDto.getTypePayment() == TypePayment.DEBIT){
+                    if(billInstallmentDto.getCardDto() != null && billInstallmentDto.getCardDto().getId() != null ){
+                        Optional<Card> optCard = cardRepository.findById(billInstallmentDto.getCardDto().getId());
+                        if(optCard.isPresent()){
+                            Card card = optCard.get();
+                            bill.setCard(card);
+                        }
+                    }
+                }
+                billRepository.save(bill);
+            }
+            else{
+                bill.setTypePayment(TypePayment.MONEY);
+                billRepository.save(bill);
             }
         }
-
-        return paidSomething;
+        return true;
     }
 }

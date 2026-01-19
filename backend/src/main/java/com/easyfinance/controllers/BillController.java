@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.easyfinance.dtos.BillDto;
+import com.easyfinance.dtos.BillInstallmentDto;
 import com.easyfinance.dtos.GetBillDto;
 import com.easyfinance.services.BillService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -43,12 +44,12 @@ public class BillController {
     }
     
     @PostMapping("/payBill")
-    public ResponseEntity<?> payBill(@RequestBody BillDto dto) {
+    public ResponseEntity<?> payBill(@RequestBody BillInstallmentDto dto) {
         boolean success = billService.payBill(dto);
         if(!success){
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("Bill not payed");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("Bill not paid");
         } 
-        return ResponseEntity.status(HttpStatus.OK).body("Bill payed");
+        return ResponseEntity.status(HttpStatus.OK).body("Bill paid");
     }
     
 
