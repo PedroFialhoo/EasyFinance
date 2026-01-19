@@ -42,38 +42,6 @@ export default function EditBill({ onClose, onCreated, bill }){
             .catch(err => console.log("Erro:", err));
     }, []);
 
-    const createBill = () =>{
-        if(!name || !selectedCategory || !typePayment || !firstDueDate || !totalValue){
-            setMessage("Por favor, preencha todos os campos obrigatórios (*).")
-            setStatusMessage(false)
-            return
-        }
-        api.post('/bill/create',{
-            name,
-            category: { id: selectedCategory },
-            typePayment,
-            card:{ id: selectedCard ? selectedCard : null } ,
-            numberInstallments: numberInstallments ? Number(numberInstallments) : 1,
-            totalValue: Number(totalValue),
-            firstDueDate
-        })
-        .then(response => {
-            setMessage("Conta criada com sucesso!")
-            setStatusMessage(true)
-            setName("")
-            setSelectedCard("")
-            setSelectedCategory("")
-            setTypePayment("")
-            setNumberInstallments("")
-            setTotalValue("")
-            setFirstDueDate("")
-            onCreated() 
-        })
-        .catch(err => {
-            setMessage("Erro ao criar conta")
-            setStatusMessage(false)
-        })
-    }
 
     const payBill = () => {
         if(typePayment === "PENDING"){
@@ -214,7 +182,7 @@ export default function EditBill({ onClose, onCreated, bill }){
                 {paymentDate === null && (
                 <Button type="button" className="bg-blue-800 text-lg font-normal hover:bg-blue-900 hover:shadow-2xl self-center" onClick={payBill}>Pagar Conta</Button> 
                 )}
-                <Button type="button" className="bg-green-800 text-lg font-normal hover:bg-green-900 hover:shadow-2xl self-center" onClick={createBill}>Editar Conta</Button> 
+                <Button type="button" className="bg-green-800 text-lg font-normal hover:bg-green-900 hover:shadow-2xl self-center">Editar Conta</Button> 
                 {message && (
                     <span className={statusMessage ? "text-green-600 self-center text-xl font-semibold" : "text-red-600 self-center text-xl font-semibold"}>
                         {message}
