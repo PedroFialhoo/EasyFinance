@@ -12,8 +12,12 @@ import com.easyfinance.dtos.BillDto;
 import com.easyfinance.dtos.BillInstallmentDto;
 import com.easyfinance.dtos.GetBillDto;
 import com.easyfinance.services.BillService;
+
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
@@ -52,5 +56,22 @@ public class BillController {
         return ResponseEntity.status(HttpStatus.OK).body("Bill paid");
     }
     
+    @PutMapping("/edit")
+    public ResponseEntity<?> edit(@RequestBody BillDto dto) {
+        boolean success = billService.edit(dto);
+        if(!success) {
+           return ResponseEntity.status(HttpStatus.CONFLICT).body("Bill not edited");
+        } 
+        return ResponseEntity.status(HttpStatus.OK).body("Bill edited");
+    }
+
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<?> delete(@PathVariable int id) {
+        boolean success = billService.delete(id);
+        if(!success) {
+           return ResponseEntity.status(HttpStatus.CONFLICT).body("Bill not deleted");
+        } 
+        return ResponseEntity.status(HttpStatus.OK).body("Bill deleted");
+    }
 
 }

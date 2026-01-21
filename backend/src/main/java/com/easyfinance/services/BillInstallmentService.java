@@ -28,4 +28,17 @@ public class BillInstallmentService {
         return true;
     }
 
+    public boolean edit(Bill bill, int installmentNumber, double value, LocalDate dueDate, LocalDate paymentDate){
+        BillInstallment billInstallment = billInstallmentRepository.findByBillIdAndInstallmentNumber(bill.getId(), installmentNumber);
+        billInstallment.setBill(bill);
+        billInstallment.setInstallmentNumber(installmentNumber);
+        billInstallment.setValue(value);
+        billInstallment.setDueDate(dueDate);
+        if(paymentDate != null){
+           billInstallment.setPaymentDate(paymentDate); 
+        }
+
+        billInstallmentRepository.save(billInstallment);
+        return true;
+    }
 }

@@ -209,4 +209,64 @@ public class BillService {
         }
         return true;
     }
+    
+    @Transactional
+    public Boolean edit(BillDto dto){
+        Optional<Bill> optBill = billRepository.findById(dto.getId());
+        if(optBill.isEmpty()){
+            return false;
+        }
+        Bill bill = optBill.get();
+        
+        if(dto.getCard().getId() != null){  
+            Category category = new Category();
+            category.setId(dto.getCategory().getId());
+            bill.setCategory(category); 
+        }
+        if(dto.getCard().getId() != null){            
+            Card card = new Card();
+            card.setId(dto.getCard().getId());        
+            bill.setCard(card);
+        }       
+               
+        bill.setName(dto.getName());        
+                    
+        bill.setTypePayment(dto.getTypePayment());
+        bill.setTotalValue(dto.getTotalValue());           
+                
+        bill.setNumberInstallments(dto.getNumberInstallments());
+        billRepository.save(bill); 
+        
+        LocalDate firstDueDate = dto.getFirstDueDate();
+        double value = dto.getTotalValue() / dto.getNumberInstallments();
+        for (int i = 1; i <= dto.getNumberInstallments(); i++) {
+
+            LocalDate dueDate = firstDueDate.plusMonths(i - 1);
+            LocalDate paymentDate = null;
+            if(dto.getBillInstallments() != null){
+                for (BillInstallmentDto installmentDto : dto.getBillInstallments()) {
+                    if(installmentDto.getInstallmentNumber() == i && installmentDto.getPaymentDate() != null){
+                        paymentDate = installmentDto.getPaymentDate();
+                        break;
+                    }
+                }
+            }
+            if (paymentDate == null && dto.getNumberInstallments() == 1 && (dto.getTypePayment() == TypePayment.MONEY|| dto.getTypePayment() == TypePayment.DEBIT || dto.getTypePayment() == TypePayment.PIX)){
+                paymentDate = dueDate; 
+            }
+            
+
+            billInstallmentService.edit(bill, i, value, dueDate, paymentDate);
+        }
+        
+        return true;
+    }
+
+    @Transactional
+    public Boolean delete(int id){
+        billInstallmentRepository.deleteAllByBillId(id);
+        billRepository.deleteById(id);
+        return true;
+    }
+    
 }
