@@ -11,7 +11,19 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useEffect, useState } from "react";
-import { ArrowUp10, CalendarDays, ChartColumnStacked, CreditCardIcon, DollarSign, HandCoins, Plus, Receipt, User, X } from "lucide-react";
+import { CalendarDays, ChartColumnStacked, CreditCardIcon, DollarSign, HandCoins, Plus, Receipt, Trash, X } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog"
+
 
 export default function EditBill({ onClose, onCreated, bill }){
     const [name, setName] = useState(bill.name || "")
@@ -69,16 +81,89 @@ export default function EditBill({ onClose, onCreated, bill }){
             })
     }
 
+    const editBill = () =>{
+        console.log("numero" ,bill.billInstallments[0].installmentNumber)
+        api.put('/bill/edit',{
+            id: bill.id,
+            name,
+            category: { id: selectedCategory },
+            typePayment,
+            card:{ id: selectedCard ? selectedCard : null } ,
+            numberInstallments: numberInstallments ? Number(numberInstallments) : 1,
+            totalValue: Number(totalValue),
+            firstDueDate: dueDate ? dueDate : null,
+            billInstallments: [
+                {
+                    installmentNumber: bill.billInstallments[0].installmentNumber,
+                    paymentDate: paymentDate || null
+                }
+            ]
+        })
+        .then(response => {
+            setMessage("Conta editada com sucesso!")
+            setStatusMessage(true)            
+            onCreated() 
+        })
+        .catch(err => {
+            setMessage("Erro ao editar conta")
+            setStatusMessage(false)
+        })
+    }
+
+    const deleteBill = () =>{
+        api.delete(`/bill/delete/${bill.id}`)
+        .then(response => {
+            setMessage("Conta excluida com sucesso!")
+            onCreated() 
+            onClose()
+        })
+        .catch(err => {
+            setMessage("Erro ao excluir conta")
+            setStatusMessage(false)
+            console.log(err)
+        })
+    }
     return(
         <div className="flex flex-col">
-            <X onClick={onClose} className="mb-3 self-end hover:text-red-700 m-4"/>
+            <div className="flex w-full justify-between p-4">
+               <AlertDialog>
+                <AlertDialogTrigger asChild>
+                    <Trash className="cursor-pointer hover:text-red-700" />
+                </AlertDialogTrigger>
+
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                    <AlertDialogTitle>Excluir conta</AlertDialogTitle>
+                    <AlertDialogDescription className="text-xl">
+                        Tem certeza que deseja excluir esta conta?
+                        <br />
+                        <span className="text-red-600 font-semibold text-lg">
+                        Essa ação não pode ser desfeita.
+                        </span>
+                    </AlertDialogDescription>
+                    </AlertDialogHeader>
+
+                    <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                        className="bg-red-700 hover:bg-red-800"
+                        onClick={deleteBill}
+                    >
+                        Excluir
+                    </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+                </AlertDialog>
+                <X onClick={onClose} className=" hover:text-red-700 "/> 
+            </div>  
             <form action="" className="m-14 flex flex-col gap-6">
 
                 <div className="relative w-full">
                     <Receipt className="absolute left-3 top-1/2 -translate-y-1/2 text-green-800" />
                     <Input value={name} type="text" placeholder="Nome da conta *" className="h-10 pl-10 pr-10 text-base!" onChange={(e) => setName(e.target.value)}/>
                 </div>  
-                              
+                { 
+                numberInstallments && numberInstallments == 1 && (
                 <div className="flex items-center gap-2">
                     <div className="relative w-full">
                         <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-green-800" />
@@ -97,6 +182,7 @@ export default function EditBill({ onClose, onCreated, bill }){
                         </Select>
                     </div> 
                 </div>   
+                )}
 
                 {
                 (typePayment === "CREDIT" || typePayment === "DEBIT") && ( 
@@ -182,7 +268,7 @@ export default function EditBill({ onClose, onCreated, bill }){
                 {paymentDate === null && (
                 <Button type="button" className="bg-blue-800 text-lg font-normal hover:bg-blue-900 hover:shadow-2xl self-center" onClick={payBill}>Pagar Conta</Button> 
                 )}
-                <Button type="button" className="bg-green-800 text-lg font-normal hover:bg-green-900 hover:shadow-2xl self-center">Editar Conta</Button> 
+                <Button type="button" className="bg-green-800 text-lg font-normal hover:bg-green-900 hover:shadow-2xl self-center" onClick={editBill}>Editar Conta</Button> 
                 {message && (
                     <span className={statusMessage ? "text-green-600 self-center text-xl font-semibold" : "text-red-600 self-center text-xl font-semibold"}>
                         {message}
