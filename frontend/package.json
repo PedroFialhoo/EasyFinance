@@ -47,8 +47,12 @@
     "appId": "com.easyfinance.app",
     "productName": "EasyFinance",
     "directories": {
-      "output": "release"
+      "output": "release",
+      "buildResources": "assets"
     },
+    "asarUnpack": [
+      "backend/**"
+    ],
     "files": [
       "dist/**",
       "main.cjs",
@@ -57,12 +61,17 @@
       "jre/**"
     ],
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "assets/icon.ico"
     },
     "extraResources": [
       {
-        "from": "backend/",
+        "from": "backend",
         "to": "backend"
+      },
+      {
+        "from": "C:/Java/jdk-21.0.9+10/jre",
+        "to": "jre"
       }
     ]
   }

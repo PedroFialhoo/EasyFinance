@@ -8,13 +8,13 @@ export default function Revenue(){
     const [show, setShow] = useState(false)
     const monthRevenue = revenue - expenses
     useEffect(() => {
-            api.get("/user/revenue")
-                .then(response => {
-                    setExpenses(response.data.expenses)
-                    setRevenue(response.data.revenue)
-                })
-                .catch(err => console.log("Erro:", err));
-        }, []);
+        api.get("/user/revenue")
+            .then(response => {
+                setExpenses(response.data.expenses)
+                setRevenue(response.data.revenue)
+            })
+            .catch(err => console.log("Erro:", err));
+    }, []);
     return(
         <div className="bg-slate-200 rounded-xl w-[30%] p-6">
             <div className="flex justify-between">

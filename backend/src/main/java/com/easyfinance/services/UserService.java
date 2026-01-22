@@ -52,7 +52,10 @@ public class UserService {
         }
         if(userDto.getRevenue() != null){
             user.setRevenue(userDto.getRevenue());
-        }        
+        }       
+        if(userDto.getPassword() != null){
+            user.setPassword(userDto.getPassword());
+        }    
 
         userRepository.save(user);
         
@@ -74,9 +77,25 @@ public class UserService {
         List<BillInstallment> installments = billInstallmentRepository.findByDueDateBetween(inicio, fim);
         Double totalExpenses = 0.0;
         for (BillInstallment billInstallment : installments) {
-            totalExpenses += billInstallment.getValue();
+            if(billInstallment.getBill().getUser().getId() == UserSession.getId()){
+               totalExpenses += billInstallment.getValue(); 
+            }            
         }
         dto.setExpenses(totalExpenses);
+        return dto;
+    }
+
+    public UserDto getUser(){
+        Optional<User> optUser = userRepository.findById(UserSession.getId());
+        if(optUser.isEmpty()){
+            return null;
+        }
+        User user = optUser.get();
+        UserDto dto = new UserDto();
+        dto.setEmail(user.getEmail());
+        dto.setPassword(user.getPassword());
+        dto.setRevenue(user.getRevenue());
+        dto.setUsername(user.getUsername());
         return dto;
     }
 

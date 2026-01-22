@@ -48,5 +48,11 @@ public class UserController {
         RevenueDto revenue = userService.getRevenue();
         return ResponseEntity.status(HttpStatus.OK).body(revenue);
     }
+
+    @GetMapping("/get")
+    public ResponseEntity<?> getUser() {
+        UserDto user = userService.getUser();
+        return ResponseEntity.status(HttpStatus.OK).body(user);
+    }
     
 }

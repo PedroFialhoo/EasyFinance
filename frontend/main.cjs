@@ -1,25 +1,38 @@
-const { app, BrowserWindow } = require("electron");
+const { app, BrowserWindow, Menu } = require("electron"); // 👈 Menu aqui
 const { spawn } = require("child_process");
 const path = require("path");
 const net = require("net");
 
 let backendProcess;
 
+// ❌ Remove a barra de menu do app inteiro
+Menu.setApplicationMenu(null);
+
 function startBackend(win) {
-  // Caminho do JAR
   const isDev = !app.isPackaged;
+
   const jarPath = isDev
-    ? path.join(__dirname, "backend", "easyfinance.jar")       // Dev
-    : path.join(process.resourcesPath, "backend", "easyfinance.jar"); // Build (.exe)
+    ? path.join(__dirname, "backend", "easyfinance.jar")
+    : path.join(process.resourcesPath, "backend", "easyfinance.jar");
 
-  backendProcess = spawn("java", ["-jar", jarPath], { shell: true });
+  const javaPath = isDev
+    ? "java"
+    : path.join(process.resourcesPath, "jre", "bin", "java.exe");
 
-  // Logs no terminal
-  backendProcess.stdout.on("data", d => process.stdout.write(`[BACKEND] ${d}`));
-  backendProcess.stderr.on("data", d => process.stderr.write(`[BACKEND-ERR] ${d}`));
-  backendProcess.on("exit", code => console.log(`[BACKEND EXIT] Code: ${code}`));
+  backendProcess = spawn(javaPath, ["-jar", jarPath], { shell: false });
 
-  // Espera a porta 8080 abrir antes de mostrar a janela
+  backendProcess.stdout.on("data", d =>
+    process.stdout.write(`[BACKEND] ${d}`)
+  );
+
+  backendProcess.stderr.on("data", d =>
+    process.stderr.write(`[BACKEND-ERR] ${d}`)
+  );
+
+  backendProcess.on("exit", code =>
+    console.log(`[BACKEND EXIT] Code: ${code}`)
+  );
+
   const port = 8080;
   const interval = setInterval(() => {
     const client = net.createConnection({ port }, () => {
@@ -36,7 +49,9 @@ function createWindow() {
   const win = new BrowserWindow({
     width: 1920,
     height: 1080,
-    show: false, // só mostra depois que backend estiver pronto
+    show: false,
+    autoHideMenuBar: true, // 👈 garante que não aparece nem com ALT
+    icon: path.join(__dirname, "assets", "icon.png"), // 👈 AQUI
     webPreferences: {
       preload: path.join(__dirname, "preload.cjs")
     }
