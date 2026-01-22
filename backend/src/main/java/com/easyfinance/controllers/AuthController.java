@@ -30,7 +30,7 @@ public class AuthController {
         if (UserSession.getId() != null) {
             UserSession.setId(null);
         }
-        User user = authService.login(dto.getEmail(), dto.getPassword());
+        User user = authService.login(dto);
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Email or password incorrect");
         }

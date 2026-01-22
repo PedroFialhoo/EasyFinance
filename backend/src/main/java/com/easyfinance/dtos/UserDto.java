@@ -13,6 +13,7 @@ public class UserDto {
     private String email;
     private String password;
     private Double revenue;
+    private Boolean rememberMe;
     
     // private List<Bill> bills;
     // private List<Card> cards;

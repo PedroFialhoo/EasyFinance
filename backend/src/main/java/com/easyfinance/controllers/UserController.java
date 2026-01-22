@@ -14,9 +14,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 
-
-
-
 @RestController
 @RequestMapping("/user")
 public class UserController {
@@ -54,5 +51,12 @@ public class UserController {
         UserDto user = userService.getUser();
         return ResponseEntity.status(HttpStatus.OK).body(user);
     }
+
+    @GetMapping("/rememberMe")
+    public ResponseEntity<?> rememberMe() {
+        UserDto user = userService.rememberMe();
+        return ResponseEntity.status(HttpStatus.OK).body(user);
+    }
+    
     
 }

@@ -99,4 +99,32 @@ public class UserService {
         return dto;
     }
 
+    
+    public UserDto rememberMe(){
+        Optional<User> optUser = userRepository.findByRememberMe(true);
+        if(optUser.isEmpty()){
+            return null;
+        }
+        User user = optUser.get();
+        UserDto dto = new UserDto();
+        dto.setEmail(user.getEmail());
+        dto.setPassword(user.getPassword());
+        dto.setRememberMe(user.getRememberMe());
+        return dto;        
+    }
+
+    public void setRememberMe(User user, Boolean rememberMe){
+        if(rememberMe){
+          Optional<User> optUser = userRepository.findByRememberMe(true);
+            if(optUser.isPresent()){
+                User oldUser = optUser.get();
+                oldUser.setRememberMe(false);
+                userRepository.save(oldUser);
+            }  
+        }        
+        
+        user.setRememberMe(rememberMe);
+        userRepository.save(user);
+        
+    }
 }

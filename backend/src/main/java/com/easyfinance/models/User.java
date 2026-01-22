@@ -31,4 +31,5 @@ public class User {
     @OneToMany(mappedBy = "user")
     private List<Card> cards;
     private Double revenue;
+    private Boolean rememberMe = false;
 }

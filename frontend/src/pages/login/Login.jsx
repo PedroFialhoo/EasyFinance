@@ -6,10 +6,12 @@ import { Link, useNavigate } from "react-router-dom"
 import { Eye, EyeClosed, Lock, Mail } from "lucide-react"
 import { useState } from "react"
 import { api } from "@/services/api"
+import { Checkbox } from "@/components/ui/checkbox"
 
 export default function Login() {
 
     const [show, setShow] = useState(false)
+    const [checked, setChecked] = useState(false)
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [message, setMessage] = useState("")
@@ -19,12 +21,23 @@ export default function Login() {
         setShow(!show)
     }
 
+    useState(() => {
+        api.get("/user/rememberMe")
+        .then(response => {
+            setEmail(response.data.email)
+            setPassword(response.data.password)
+            setChecked(response.data.rememberMe)
+        })
+        .catch(err => console.log("Erro:", err));
+    }, [])
+
     const login = () =>{
         setMessage("")
         setStatusMessage(null)
         api.post('/auth/login',{
             email: email,
-            password: password
+            password: password,
+            rememberMe: checked
         })
         .then(response => {
             setMessage("Login bem sucedido")
@@ -55,6 +68,12 @@ export default function Login() {
                         <Input value={password} type={show ? "text" : "password"} placeholder="Senha" className="h-10 pl-10 pr-10 text-base!" onChange={(e) => setPassword(e.target.value)}/>
                         {!show ? (<Eye className="absolute right-3 top-1/2 -translate-y-1/2 text-green-700 cursor-pointer" onClick={toggleShow}/>) : (<EyeClosed className="absolute right-3 top-1/2 -translate-y-1/2 text-green-700 cursor-pointer" onClick={toggleShow} />)}
                     </div>
+
+                    <div className="w-full">
+                        <Checkbox className="border-slate-600 data-[state=checked]:bg-green-800" checked={checked} onCheckedChange={setChecked}/>
+                        <label className="ml-2 text-slate-500">Lembrar de mim</label>
+                    </div>
+                    
                     {message && (
                         <span className={statusMessage ? "text-green-600 self-start" : "text-red-600 self-start"}>
                             {message}
