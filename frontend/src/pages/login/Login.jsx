@@ -4,7 +4,7 @@ import logo from "/src/assets/images/logo-w.png"
 import { Button } from "@/components/ui/button"
 import { Link, useNavigate } from "react-router-dom"
 import { Eye, EyeClosed, Lock, Mail } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { api } from "@/services/api"
 import { Checkbox } from "@/components/ui/checkbox"
 
@@ -21,14 +21,20 @@ export default function Login() {
         setShow(!show)
     }
 
-    useState(() => {
-        api.get("/user/rememberMe")
-        .then(response => {
-            setEmail(response.data.email)
-            setPassword(response.data.password)
-            setChecked(response.data.rememberMe)
-        })
-        .catch(err => console.log("Erro:", err));
+    useEffect(() => {
+        const tryFetchRememberMe = () => {
+            api.get("/user/rememberMe")
+                .then(response => {
+                    setEmail(response.data.email)
+                    setPassword(response.data.password)
+                    setChecked(response.data.rememberMe)
+                })
+                .catch(() => {
+                    setTimeout(tryFetchRememberMe, 500)
+                })
+        }
+
+        tryFetchRememberMe()
     }, [])
 
     const login = () =>{
