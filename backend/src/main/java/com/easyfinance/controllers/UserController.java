@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.easyfinance.dtos.RevenueDto;
+import com.easyfinance.dtos.DashboardDto;
+import com.easyfinance.dtos.ChangePasswordDto;
 import com.easyfinance.dtos.UserDto;
 import com.easyfinance.services.UserService;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -32,18 +34,34 @@ public class UserController {
     
     @PutMapping("/update")
     public ResponseEntity<?> updateUser(@RequestBody UserDto userDto) {
-        boolean success = userService.updateUser(userDto);
-        if(success){
+        try {
+            userService.updateUser(userDto);
             return ResponseEntity.ok("User update!");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
-        
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User not update!");
+    }
+
+    @PutMapping("/update-password")
+    public ResponseEntity<?> updatePassword(@RequestBody ChangePasswordDto dto) {
+        try {
+            userService.changePassword(dto);
+            return ResponseEntity.ok("Password updated!");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @GetMapping("/revenue")
     public ResponseEntity<?> getRevenue() {
         RevenueDto revenue = userService.getRevenue();
         return ResponseEntity.status(HttpStatus.OK).body(revenue);
+    }
+
+    @GetMapping("/dashboard")
+    public ResponseEntity<?> getDashboard() {
+        DashboardDto dashboard = userService.getDashboard();
+        return ResponseEntity.ok(dashboard);
     }
 
     @GetMapping("/get")

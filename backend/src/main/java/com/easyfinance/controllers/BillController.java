@@ -34,11 +34,12 @@ public class BillController {
 
     @PostMapping("/create")
     public ResponseEntity<?> create(@RequestBody BillDto dto) {
-        boolean success = billService.create(dto);
-        if(!success) {
-           return ResponseEntity.status(HttpStatus.CONFLICT).body("Bill not created");
-        } 
-        return ResponseEntity.status(HttpStatus.OK).body("Bill created");
+        try {
+            billService.create(dto);
+            return ResponseEntity.ok("Bill created");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @PostMapping("/get/byMonth")
@@ -49,27 +50,35 @@ public class BillController {
     
     @PostMapping("/payBill")
     public ResponseEntity<?> payBill(@RequestBody BillInstallmentDto dto) {
-        boolean success = billService.payBill(dto);
-        if(!success){
-            return ResponseEntity.status(HttpStatus.CONFLICT).body("Bill not paid");
-        } 
-        return ResponseEntity.status(HttpStatus.OK).body("Bill paid");
+        try {
+            boolean success = billService.payBill(dto);
+            if(!success){
+                return ResponseEntity.status(HttpStatus.CONFLICT).body("Bill not paid");
+            }
+            return ResponseEntity.ok("Bill paid");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
     
     @PutMapping("/edit")
     public ResponseEntity<?> edit(@RequestBody BillDto dto) {
-        boolean success = billService.edit(dto);
-        if(!success) {
-           return ResponseEntity.status(HttpStatus.CONFLICT).body("Bill not edited");
-        } 
-        return ResponseEntity.status(HttpStatus.OK).body("Bill edited");
+        try {
+            boolean success = billService.edit(dto);
+            if(!success) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Bill not found");
+            }
+            return ResponseEntity.ok("Bill edited");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @DeleteMapping("/delete/{id}")
     public ResponseEntity<?> delete(@PathVariable int id) {
         boolean success = billService.delete(id);
         if(!success) {
-           return ResponseEntity.status(HttpStatus.CONFLICT).body("Bill not deleted");
+           return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Bill not found");
         } 
         return ResponseEntity.status(HttpStatus.OK).body("Bill deleted");
     }

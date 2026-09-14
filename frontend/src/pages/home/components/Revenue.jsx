@@ -1,5 +1,6 @@
 import { api } from "@/services/api";
-import { Eye, EyeOff, TrendingUp } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
+import { ArrowDownRight, ArrowUpRight, Eye, EyeOff, WalletCards } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export default function Revenue(){
@@ -16,35 +17,63 @@ export default function Revenue(){
             .catch(err => console.log("Erro:", err));
     }, []);
     return(
-        <div className="bg-slate-200 rounded-xl w-[30%] p-6">
-            <div className="flex justify-between">
-                <h1 className="font-bold text-4xl text-green-800 flex items-center gap-3">
-                    Receita <TrendingUp size={45}/>
-                </h1>   
-                {
-                    show
-                    ? (<Eye className="text-green-800 hover:text-green-950" size={35} onClick={() => setShow(!show)}/>)
-                    : (<EyeOff className="text-green-800 hover:text-green-950" size={35} onClick={() => setShow(!show)}/>)
-                }
-            </div>            
-            <div className="mt-4">
-                <p className="text-lg text-slate-700">Total (fixo)</p>
-                <span className="text-2xl font-bold text-green-900">
-                R$ { show ? `${(revenue ?? 0).toFixed(2)}` : "✱✱✱✱✱"}
-                </span>
+        <section className="relative w-full max-w-5xl overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 p-5 text-slate-800 shadow-sm lg:p-7">
+            <div className="absolute -bottom-24 left-1/3 size-52 rounded-full bg-slate-200/50 blur-3xl" />
+
+            <div className="relative flex items-start justify-between gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="rounded-xl bg-green-100 p-3">
+                        <WalletCards className="size-6 text-green-800" />
+                    </div>
+                    <div>
+                        <p className="text-sm font-medium uppercase tracking-[0.18em] text-green-700">Visão mensal</p>
+                        <h1 className="text-2xl font-semibold tracking-tight text-green-900">Seu financeiro</h1>
+                    </div>
+                </div>
+                <button
+                    type="button"
+                    onClick={() => setShow(!show)}
+                    className="rounded-lg bg-white p-2.5 text-green-800 shadow-sm ring-1 ring-slate-200 transition-colors hover:bg-green-50"
+                    title={show ? "Ocultar valores" : "Exibir valores"}
+                >
+                    {show ? <Eye className="size-5" /> : <EyeOff className="size-5" />}
+                </button>
             </div>
-            <div className="mt-4">
-                <p className="text-lg text-slate-700">Gastos</p>
-                <span className="text-2xl font-bold text-red-700">
-                R$ { show ? `${(expenses ?? 0).toFixed(2)}` : "✱✱✱✱✱"}
-                </span>
-            </div>   
-            <div className="mt-4">
-                <p className="text-lg text-slate-700">Mês atual</p>
-                <span className={`text-2xl font-bold ${monthRevenue > 0 ? "text-green-900" : "text-red-700"}`}>
-                R$ { show ? `${(monthRevenue ?? 0).toFixed(2)}` : "✱✱✱✱✱"}
-                </span>
-            </div>        
-        </div>
+
+            <div className="relative mt-7 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                <div className="rounded-xl border border-green-100 bg-white/90 p-4 shadow-sm backdrop-blur-sm">
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm text-slate-600">Receita mensal</p>
+                        <ArrowUpRight className="size-4 text-green-700" />
+                    </div>
+                    <p className="mt-3 text-2xl font-semibold tracking-tight text-green-900">
+                        {show ? formatCurrency(revenue) : "R$ •••••"}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">Valor informado no perfil</p>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-white/90 p-4 shadow-sm backdrop-blur-sm">
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm text-slate-600">Gastos do mês</p>
+                        <ArrowDownRight className="size-4 text-slate-500" />
+                    </div>
+                    <p className="mt-3 text-2xl font-semibold tracking-tight text-slate-800">
+                        {show ? formatCurrency(expenses) : "R$ •••••"}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">Contas previstas neste mês</p>
+                </div>
+
+                <div className="rounded-xl border border-green-100 bg-white/90 p-4 shadow-sm backdrop-blur-sm">
+                    <div className="flex items-center justify-between">
+                        <p className="text-sm text-slate-600">Saldo projetado</p>
+                        <WalletCards className="size-4 text-green-700" />
+                    </div>
+                    <p className={`mt-3 text-2xl font-semibold tracking-tight ${monthRevenue >= 0 ? "text-green-900" : "text-red-700"}`}>
+                        {show ? formatCurrency(monthRevenue) : "R$ •••••"}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">Receita menos gastos</p>
+                </div>
+            </div>
+        </section>
     )
 }

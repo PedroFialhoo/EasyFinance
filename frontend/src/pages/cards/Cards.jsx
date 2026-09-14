@@ -15,7 +15,7 @@ export default function Cards() {
   const navigate = useNavigate()
 
   return (
-    <div className="p-8 flex flex-col gap-7">
+    <div className="flex flex-col gap-5 p-4 lg:gap-7 lg:p-8">
       <div>
         <Button
           type="button"
@@ -37,8 +37,8 @@ export default function Cards() {
       />
 
       {isActiveAdd && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-2xl w-125">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-xl overflow-y-auto rounded-xl bg-white shadow-2xl">
             <CreateCard
               onClose={() => setIsActiveAdd(false)}
               onCreated={refreshCards}
@@ -48,8 +48,8 @@ export default function Cards() {
       )}
 
       {isActiveEdit && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-2xl w-125">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-xl overflow-y-auto rounded-xl bg-white shadow-2xl">
             <EditCard
               onClose={() => setIsActiveEdit(false)}
               onCreated={refreshCards}

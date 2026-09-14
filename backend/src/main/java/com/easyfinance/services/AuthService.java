@@ -18,7 +18,13 @@ public class AuthService {
     UserService userService;
 
     public User login(LoginDto dto){
-        Optional<User> optUser = userRepository.findByEmail(dto.getEmail());   
+        if (dto == null || dto.getIdentifier() == null || dto.getIdentifier().isBlank()) {
+            return null;
+        }
+        Optional<User> optUser = userRepository.findByEmail(dto.getIdentifier());
+        if (optUser.isEmpty()) {
+            optUser = userRepository.findFirstByUsername(dto.getIdentifier());
+        }
         if(optUser.isPresent()){
             User user = optUser.get();
             if(user.getPassword().equals(dto.getPassword())){            

@@ -11,6 +11,7 @@ import com.easyfinance.models.User;
 @Repository
 public interface UserRepository extends JpaRepository<User, Integer> {
     Optional<User> findByEmail(String email);
+    Optional<User> findFirstByUsername(String username);
     Optional<User> findByRememberMe(Boolean rememberMe);
 
 }

@@ -25,6 +25,8 @@ import com.easyfinance.repositories.BillRepository;
 import com.easyfinance.repositories.CardRepository;
 import com.easyfinance.repositories.HolderRepository;
 
+import jakarta.transaction.Transactional;
+
 @Service
 public class CardService {
     @Autowired
@@ -182,6 +184,7 @@ public class CardService {
         return cardsDto;
     }
 
+    @Transactional
     public boolean payCard(CardDto cardDto){
         Optional<Card> optCard = cardRepository.findById(cardDto.getId());
         if(optCard.isEmpty()){

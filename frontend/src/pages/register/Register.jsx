@@ -37,13 +37,13 @@ export default function Register() {
     }
 
     return(
-        <div className="flex h-screen overflow-hidden">
-            <div className="h-full bg-green-800 w-[40%] flex items-center justify-center">
-                <img src={logo} alt="logo EasyFinance" className="w-[90%]"/>
+        <div className="flex min-h-screen overflow-y-auto">
+            <div className="flex w-[38%] items-center justify-center bg-green-800 p-8">
+                <img src={logo} alt="logo EasyFinance" className="w-full max-w-xs"/>
             </div>
-            <div className="flex flex-col justify-center items-center w-[60%] gap-18"> 
-                <h1 className="text-5xl font-normal text-green-800 w-[50%]">Assuma o controle do seu dinheiro e transforme seus objetivos em conquistas reais.</h1>
-                <form action="" className="flex flex-col justify-center items-center w-[50%] gap-5">
+            <div className="flex w-[62%] flex-col items-center justify-center gap-10 px-8 py-10 lg:gap-12">
+                <h1 className="w-full max-w-xl text-3xl font-normal text-green-800 lg:text-4xl xl:text-5xl">Assuma o controle do seu dinheiro e transforme seus objetivos em conquistas reais.</h1>
+                <form action="" className="flex w-full max-w-xl flex-col justify-center gap-5">
                     <div className="relative w-full">
                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-green-800" />
                         <Input value={email} type="email" placeholder="Email" className="h-10 pl-10 pr-10 text-base!" onChange={(e) => setEmail(e.target.value)}/>

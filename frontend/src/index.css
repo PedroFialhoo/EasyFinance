@@ -116,8 +116,29 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    scrollbar-color: var(--muted-foreground) var(--muted);
+    scrollbar-width: thin;
   }
   body {
     @apply bg-background text-foreground;
+  }
+
+  ::-webkit-scrollbar {
+    width: 0.625rem;
+    height: 0.625rem;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: var(--muted);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--muted-foreground);
+    border: 0.1875rem solid var(--muted);
+    border-radius: 9999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--foreground);
   }
 }

@@ -19,7 +19,7 @@ export default function CreditCard({id = "", bank = "", name = "", number = "", 
     }
 
     return (
-        <div className={`${corBg} w-84 min-h-48 rounded-2xl p-6 text-white shadow-2xl flex flex-col justify-between transition-all duration-500 hover:-translate-y-3`} onClick={editCard}>
+        <div className={`${corBg} min-h-48 w-full max-w-84 rounded-2xl p-6 text-white shadow-2xl flex flex-col justify-between transition-all duration-500 hover:-translate-y-3`} onClick={editCard}>
             <div className="flex justify-between items-start">
                 <span className="font-bold text-lg italic tracking-tight capitalize">{bank}</span>
                 <div className="w-10 h-8 bg-yellow-400/80 rounded-md shadow-inner"></div>

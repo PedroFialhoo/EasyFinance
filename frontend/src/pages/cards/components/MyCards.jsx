@@ -14,12 +14,12 @@ export default function MyCards({onAdd, reload, onEdit, setCard}) {
     }, [reload]);
 
     return(
-        <div className="bg-slate-200 rounded-xl p-4">
-            <div className="p-4 mb-3 flex justify-between">
+        <div className="rounded-xl border border-slate-300 bg-slate-200 p-4 shadow-sm">
+            <div className="mb-3 flex flex-wrap justify-between gap-3 p-2 sm:p-4">
                 <h1 className="font-bold text-2xl text-green-800">Meus Cartões</h1>
                 <Button type="button" className="bg-green-800 self-start text-lg font-normal hover:bg-green-900 hover:shadow-2xl" onClick={onAdd}>Adicionar Cartão <span className="font-semibold text-xl">+</span></Button> 
             </div>
-            <div className="flex flex-wrap gap-6">
+            <div className="flex flex-wrap justify-center gap-4 lg:justify-start lg:gap-6">
                 {cards.map((card)=>(
                     <CreditCard id={card.id} bank={card.bank.name} name={card.holder.name} number={card.number} edit={true} onEdit={onEdit} setCard={setCard}/>
                 ))}

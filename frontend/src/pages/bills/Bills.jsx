@@ -14,7 +14,7 @@ export default function Bills(){
     const [bill, setBill] = useState(null);
     const refreshCards = () => setReload((prev) => !prev);
     return(
-        <div className="p-8 flex flex-col gap-7">
+        <div className="flex flex-col gap-5 p-4 lg:gap-7 lg:p-8">
             <div>
                 <Button
                 type="button"
@@ -35,8 +35,8 @@ export default function Bills(){
             />
 
             {isActiveAdd && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                <div className="bg-white rounded-xl shadow-2xl w-125">
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                <div className="max-h-[calc(100dvh-2rem)] w-full max-w-xl overflow-y-auto rounded-xl bg-white shadow-2xl">
                   <CreateBill
                     onClose={() => setIsActiveAdd(false)}
                     onCreated={refreshCards}
@@ -46,8 +46,8 @@ export default function Bills(){
             )}
 
             {isActiveEdit && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                <div className="bg-white rounded-xl shadow-2xl w-125">
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                <div className="max-h-[calc(100dvh-2rem)] w-full max-w-xl overflow-y-auto rounded-xl bg-white shadow-2xl">
                   <EditBill
                     bill={bill}
                     onClose={() => setIsActiveEdit(false)}

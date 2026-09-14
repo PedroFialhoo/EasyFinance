@@ -13,6 +13,7 @@ import com.easyfinance.dtos.LoginDto;
 import com.easyfinance.models.User;
 import com.easyfinance.models.UserSession;
 import com.easyfinance.services.AuthService;
+import com.easyfinance.services.UserService;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,6 +25,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class AuthController {
     @Autowired
     private AuthService authService;
+
+    @Autowired
+    private UserService userService;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginDto dto) {
@@ -49,6 +53,7 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("no user logged in");
         }
         System.out.println("User: " + UserSession.getId() + " Logout");
+        userService.clearRememberMe();
         UserSession.setId(null);
         return ResponseEntity.ok("Successful logout");
     }

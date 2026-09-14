@@ -131,7 +131,7 @@ export default function EditCard({onClose, onCreated, card}){
                <Trash onClick={deleteCard} className=" hover:text-red-700"/>
                 <X onClick={onClose} className=" hover:text-red-700 "/> 
             </div>            
-            <form action="" className="m-14 flex flex-col gap-6">
+            <form action="" className="m-4 flex flex-col gap-5 sm:m-8 lg:m-12">
                 <div className="relative w-full">
                     <CreditCardIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-green-800" />
                     <Input value={number} type="text" maxLength={4} placeholder="Numero do Cartão (4 últimos)" className="h-10 pl-10 pr-10 text-base!" onChange={(e) => setNumber(e.target.value.replace(/\D/g, ""))}/>

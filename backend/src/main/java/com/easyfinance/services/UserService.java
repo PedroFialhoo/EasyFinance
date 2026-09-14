@@ -1,13 +1,21 @@
 package com.easyfinance.services;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.easyfinance.dtos.RevenueDto;
+import com.easyfinance.dtos.CategoryExpenseDto;
+import com.easyfinance.dtos.ChangePasswordDto;
+import com.easyfinance.dtos.DashboardDto;
+import com.easyfinance.dtos.MonthlySummaryDto;
 import com.easyfinance.dtos.UserDto;
 import com.easyfinance.models.BillInstallment;
 import com.easyfinance.models.User;
@@ -36,34 +44,53 @@ public class UserService {
     }
 
     public Boolean updateUser(UserDto userDto){
-        Integer userId = UserSession.getId();
-        if(userId == null){
-            System.out.println("User not logged in");
-            return false;
+        if (userDto == null || userDto.getUsername() == null || userDto.getUsername().isBlank()) {
+            throw new IllegalArgumentException("Nome de usuario obrigatorio");
         }
-        Optional<User> optUser = userRepository.findById(userId);
-        
-        User user = optUser.get();
-        if(userDto.getEmail() != null){
-           user.setEmail(userDto.getEmail()); 
+        if (userDto.getEmail() == null || !userDto.getEmail().contains("@")) {
+            throw new IllegalArgumentException("E-mail invalido");
         }
-        if(userDto.getUsername() != null){
-           user.setUsername(userDto.getUsername()); 
+        if (userDto.getRevenue() == null || !Double.isFinite(userDto.getRevenue()) || userDto.getRevenue() < 0) {
+            throw new IllegalArgumentException("A receita deve ser um valor maior ou igual a zero");
         }
-        if(userDto.getRevenue() != null){
-            user.setRevenue(userDto.getRevenue());
-        }       
-        if(userDto.getPassword() != null){
-            user.setPassword(userDto.getPassword());
-        }    
+
+        User user = getActiveUser();
+        Optional<User> existingUser = userRepository.findByEmail(userDto.getEmail());
+        if (existingUser.isPresent() && existingUser.get().getId() != user.getId()) {
+            throw new IllegalArgumentException("Este e-mail ja esta cadastrado");
+        }
+
+        user.setEmail(userDto.getEmail());
+        user.setUsername(userDto.getUsername());
+        user.setRevenue(userDto.getRevenue());
 
         userRepository.save(user);
-        
+        return true;
+    }
+
+    public Boolean changePassword(ChangePasswordDto dto) {
+        if (dto == null || dto.getCurrentPassword() == null || dto.getCurrentPassword().isBlank()) {
+            throw new IllegalArgumentException("Informe a senha atual");
+        }
+        if (dto.getNewPassword() == null || dto.getNewPassword().isBlank()) {
+            throw new IllegalArgumentException("Informe a nova senha");
+        }
+
+        User user = getActiveUser();
+        if (!user.getPassword().equals(dto.getCurrentPassword())) {
+            throw new IllegalArgumentException("A senha atual esta incorreta");
+        }
+        user.setPassword(dto.getNewPassword());
+        userRepository.save(user);
         return true;
     }
 
     public RevenueDto getRevenue(){
-        Optional<User> optUser = userRepository.findById(UserSession.getId());
+        Integer userId = UserSession.getId();
+        if (userId == null) {
+            return null;
+        }
+        Optional<User> optUser = userRepository.findById(userId);
         if(optUser.isEmpty()){
             return null;
         }
@@ -85,15 +112,59 @@ public class UserService {
         return dto;
     }
 
+    public DashboardDto getDashboard() {
+        User user = getActiveUser();
+        LocalDate currentMonth = LocalDate.now().withDayOfMonth(1);
+        LocalDate start = currentMonth.minusMonths(5);
+        LocalDate end = currentMonth.plusMonths(1);
+        List<BillInstallment> installments = billInstallmentRepository
+                .findByUserAndDueDateRange(user.getId(), start, end);
+
+        Map<YearMonth, Double> expensesByMonth = new LinkedHashMap<>();
+        for (int index = 0; index < 6; index++) {
+            expensesByMonth.put(YearMonth.from(start.plusMonths(index)), 0.0);
+        }
+
+        Map<String, Double> expensesByCategory = new LinkedHashMap<>();
+        YearMonth activeMonth = YearMonth.from(currentMonth);
+        for (BillInstallment installment : installments) {
+            YearMonth month = YearMonth.from(installment.getDueDate());
+            expensesByMonth.computeIfPresent(month, (key, value) -> value + installment.getValue());
+
+            if (month.equals(activeMonth)) {
+                String category = installment.getBill().getCategory() == null
+                        ? "Sem categoria"
+                        : installment.getBill().getCategory().getName();
+                expensesByCategory.merge(category, installment.getValue(), Double::sum);
+            }
+        }
+
+        DashboardDto dto = new DashboardDto();
+        double revenue = user.getRevenue() == null ? 0.0 : user.getRevenue();
+        for (Map.Entry<YearMonth, Double> entry : expensesByMonth.entrySet()) {
+            dto.getMonthlySummary().add(new MonthlySummaryDto(entry.getKey().toString(), revenue, entry.getValue()));
+        }
+
+        List<Map.Entry<String, Double>> categories = new ArrayList<>(expensesByCategory.entrySet());
+        categories.sort((first, second) -> Double.compare(second.getValue(), first.getValue()));
+        for (Map.Entry<String, Double> entry : categories) {
+            dto.getExpensesByCategory().add(new CategoryExpenseDto(entry.getKey(), entry.getValue()));
+        }
+        return dto;
+    }
+
     public UserDto getUser(){
-        Optional<User> optUser = userRepository.findById(UserSession.getId());
+        Integer userId = UserSession.getId();
+        if (userId == null) {
+            return null;
+        }
+        Optional<User> optUser = userRepository.findById(userId);
         if(optUser.isEmpty()){
             return null;
         }
         User user = optUser.get();
         UserDto dto = new UserDto();
         dto.setEmail(user.getEmail());
-        dto.setPassword(user.getPassword());
         dto.setRevenue(user.getRevenue());
         dto.setUsername(user.getUsername());
         return dto;
@@ -114,7 +185,7 @@ public class UserService {
     }
 
     public void setRememberMe(User user, Boolean rememberMe){
-        if(rememberMe){
+        if(Boolean.TRUE.equals(rememberMe)){
           Optional<User> optUser = userRepository.findByRememberMe(true);
             if(optUser.isPresent()){
                 User oldUser = optUser.get();
@@ -123,8 +194,29 @@ public class UserService {
             }  
         }        
         
-        user.setRememberMe(rememberMe);
+        user.setRememberMe(Boolean.TRUE.equals(rememberMe));
         userRepository.save(user);
         
+    }
+
+    public void clearRememberMe() {
+        Integer userId = UserSession.getId();
+        if (userId == null) {
+            return;
+        }
+
+        userRepository.findById(userId).ifPresent(user -> {
+            user.setRememberMe(false);
+            userRepository.save(user);
+        });
+    }
+
+    private User getActiveUser() {
+        Integer userId = UserSession.getId();
+        if (userId == null) {
+            throw new IllegalArgumentException("Nenhuma conta ativa");
+        }
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Conta ativa nao encontrada"));
     }
 }

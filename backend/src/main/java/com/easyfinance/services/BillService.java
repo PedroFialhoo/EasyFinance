@@ -26,6 +26,8 @@ import com.easyfinance.models.UserSession;
 import com.easyfinance.repositories.BillInstallmentRepository;
 import com.easyfinance.repositories.BillRepository;
 import com.easyfinance.repositories.CardRepository;
+import com.easyfinance.repositories.CategoryRepository;
+import com.easyfinance.repositories.UserRepository;
 
 import jakarta.transaction.Transactional;
 
@@ -39,6 +41,12 @@ public class BillService {
 
     @Autowired
     private CardRepository cardRepository;
+
+    @Autowired
+    private CategoryRepository categoryRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired 
     private BillInstallmentService billInstallmentService;
@@ -59,22 +67,18 @@ public class BillService {
         return dtos;
     }
 
+    @Transactional
     public Boolean create(BillDto dto){
+        validateBill(dto);
+        User user = getActiveUser();
+
         Bill bill = new Bill();
-        Category category = new Category();
-        User user = new User();
+        Category category = getCategory(dto);
+        Card card = getCard(dto.getCard(), dto.getTypePayment(), user);
 
-        user.setId(UserSession.getId());
-        category.setId(dto.getCategory().getId());
-
-        if(dto.getCard().getId() != null){            
-            Card card = new Card();
-            card.setId(dto.getCard().getId());        
-            bill.setCard(card);
-        }        
-        
         bill.setUser(user);
-        bill.setCategory(category);        
+        bill.setCategory(category);
+        bill.setCard(card);
         bill.setName(dto.getName());
         bill.setNumberInstallments(dto.getNumberInstallments());
                     
@@ -125,6 +129,8 @@ public class BillService {
         billDto.setTypePayment(bill.getTypePayment());
 
         List<BillInstallment> installments = billInstallmentRepository.findByBillId(bill.getId());
+        billDto.setHasPaidInstallments(installments.stream()
+                .anyMatch(installment -> installment.getPaymentDate() != null));
 
         List<BillInstallmentDto> installmentDtos = new ArrayList<>();
         for (BillInstallment installment : installments) {
@@ -180,54 +186,63 @@ public class BillService {
 
     @Transactional
     public boolean payBill(BillInstallmentDto billInstallmentDto){
+        if (billInstallmentDto == null) {
+            throw new IllegalArgumentException("Parcela obrigatoria");
+        }
         Optional<BillInstallment> optBillInstallment = billInstallmentRepository.findById(billInstallmentDto.getId());
         if(optBillInstallment.isEmpty()){
             return false;
         }
         BillInstallment billInstallment = optBillInstallment.get();
+        Bill bill = billInstallment.getBill();
+        if (!isActiveUserBill(bill) || billInstallment.getPaymentDate() != null) {
+            return false;
+        }
+
+        if(bill.getTypePayment() == TypePayment.PENDING){
+            TypePayment typePayment = billInstallmentDto.getTypePayment();
+            if (typePayment == null || typePayment == TypePayment.PENDING) {
+                throw new IllegalArgumentException("Selecione uma forma de pagamento");
+            }
+            bill.setTypePayment(typePayment);
+            bill.setCard(getCard(billInstallmentDto.getCardDto(), typePayment, bill.getUser()));
+            billRepository.save(bill);
+        }
+
         billInstallment.setPaymentDate(LocalDate.now());
         billInstallmentRepository.save(billInstallment);
-        Bill bill = billInstallment.getBill();
-        if(bill.getTypePayment() == TypePayment.PENDING){
-            if(billInstallmentDto.getTypePayment() != null && billInstallmentDto.getTypePayment() != TypePayment.PENDING){
-                bill.setTypePayment(billInstallmentDto.getTypePayment());
-                if(billInstallmentDto.getTypePayment() == TypePayment.CREDIT || billInstallmentDto.getTypePayment() == TypePayment.DEBIT){
-                    if(billInstallmentDto.getCardDto() != null && billInstallmentDto.getCardDto().getId() != null ){
-                        Optional<Card> optCard = cardRepository.findById(billInstallmentDto.getCardDto().getId());
-                        if(optCard.isPresent()){
-                            Card card = optCard.get();
-                            bill.setCard(card);
-                        }
-                    }
-                }
-                billRepository.save(bill);
-            }
-            else{
-                bill.setTypePayment(TypePayment.MONEY);
-                billRepository.save(bill);
-            }
-        }
         return true;
     }
     
     @Transactional
     public Boolean edit(BillDto dto){
+        if (dto == null || dto.getId() == null) {
+            throw new IllegalArgumentException("Conta obrigatoria");
+        }
         Optional<Bill> optBill = billRepository.findById(dto.getId());
         if(optBill.isEmpty()){
             return false;
         }
         Bill bill = optBill.get();
-        
-        if(dto.getCard().getId() != null){  
-            Category category = new Category();
-            category.setId(dto.getCategory().getId());
-            bill.setCategory(category); 
+        if (!isActiveUserBill(bill)) {
+            return false;
         }
-        if(dto.getCard().getId() != null){            
-            Card card = new Card();
-            card.setId(dto.getCard().getId());        
-            bill.setCard(card);
-        }       
+        validateBill(dto);
+        if (dto.getNumberInstallments() != bill.getNumberInstallments()) {
+            throw new IllegalArgumentException("Nao e permitido alterar a quantidade de parcelas");
+        }
+
+        List<BillInstallment> installments = billInstallmentRepository.findByBillId(bill.getId());
+        if (installments.size() != bill.getNumberInstallments()) {
+            throw new IllegalStateException("Parcelas da conta estao inconsistentes");
+        }
+        if (installments.stream().anyMatch(installment -> installment.getPaymentDate() != null)
+                && Double.compare(dto.getTotalValue(), bill.getTotalValue()) != 0) {
+            throw new IllegalArgumentException("Nao e permitido alterar o valor de uma conta com parcelas pagas");
+        }
+
+        bill.setCategory(getCategory(dto));
+        bill.setCard(getCard(dto.getCard(), dto.getTypePayment(), bill.getUser()));
                
         bill.setName(dto.getName());        
                     
@@ -237,26 +252,19 @@ public class BillService {
         bill.setNumberInstallments(dto.getNumberInstallments());
         billRepository.save(bill); 
         
-        LocalDate firstDueDate = dto.getFirstDueDate();
         double value = dto.getTotalValue() / dto.getNumberInstallments();
-        for (int i = 1; i <= dto.getNumberInstallments(); i++) {
-
-            LocalDate dueDate = firstDueDate.plusMonths(i - 1);
-            LocalDate paymentDate = null;
-            if(dto.getBillInstallments() != null){
-                for (BillInstallmentDto installmentDto : dto.getBillInstallments()) {
-                    if(installmentDto.getInstallmentNumber() == i && installmentDto.getPaymentDate() != null){
-                        paymentDate = installmentDto.getPaymentDate();
-                        break;
-                    }
+        for (BillInstallment installment : installments) {
+            installment.setValue(value);
+            if (dto.getNumberInstallments() == 1) {
+                installment.setDueDate(dto.getFirstDueDate());
+                LocalDate paymentDate = paymentDateFor(dto, installment.getInstallmentNumber());
+                if (paymentDate != null) {
+                    installment.setPaymentDate(paymentDate);
+                } else if (installment.getPaymentDate() == null && isPaidOnCreation(dto.getTypePayment())) {
+                    installment.setPaymentDate(dto.getFirstDueDate());
                 }
             }
-            if (paymentDate == null && dto.getNumberInstallments() == 1 && (dto.getTypePayment() == TypePayment.MONEY|| dto.getTypePayment() == TypePayment.DEBIT || dto.getTypePayment() == TypePayment.PIX)){
-                paymentDate = dueDate; 
-            }
-            
-
-            billInstallmentService.edit(bill, i, value, dueDate, paymentDate);
+            billInstallmentRepository.save(installment);
         }
         
         return true;
@@ -264,9 +272,87 @@ public class BillService {
 
     @Transactional
     public Boolean delete(int id){
+        Optional<Bill> optBill = billRepository.findById(id);
+        if (optBill.isEmpty() || !isActiveUserBill(optBill.get())) {
+            return false;
+        }
         billInstallmentRepository.deleteAllByBillId(id);
         billRepository.deleteById(id);
         return true;
+    }
+
+    private User getActiveUser() {
+        Integer userId = UserSession.getId();
+        if (userId == null) {
+            throw new IllegalArgumentException("Nenhuma conta ativa");
+        }
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Conta ativa nao encontrada"));
+    }
+
+    private void validateBill(BillDto dto) {
+        if (dto == null || dto.getName() == null || dto.getName().isBlank()) {
+            throw new IllegalArgumentException("Nome obrigatorio");
+        }
+        if (dto.getCategory() == null || dto.getCategory().getId() == null) {
+            throw new IllegalArgumentException("Categoria obrigatoria");
+        }
+        if (dto.getTypePayment() == null) {
+            throw new IllegalArgumentException("Forma de pagamento obrigatoria");
+        }
+        if (dto.getFirstDueDate() == null) {
+            throw new IllegalArgumentException("Data obrigatoria");
+        }
+        if (!Double.isFinite(dto.getTotalValue()) || dto.getTotalValue() <= 0) {
+            throw new IllegalArgumentException("Valor total deve ser maior que zero");
+        }
+        if (dto.getNumberInstallments() < 1) {
+            throw new IllegalArgumentException("Numero de parcelas deve ser maior que zero");
+        }
+    }
+
+    private Category getCategory(BillDto dto) {
+        return categoryRepository.findById(dto.getCategory().getId())
+                .orElseThrow(() -> new IllegalArgumentException("Categoria nao encontrada"));
+    }
+
+    private Card getCard(CardDto cardDto, TypePayment typePayment, User user) {
+        boolean requiresCard = typePayment == TypePayment.CREDIT || typePayment == TypePayment.DEBIT;
+        if (!requiresCard) {
+            return null;
+        }
+        if (cardDto == null || cardDto.getId() == null) {
+            throw new IllegalArgumentException("Cartao obrigatorio para este pagamento");
+        }
+        Card card = cardRepository.findById(cardDto.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Cartao nao encontrado"));
+        if (!Boolean.TRUE.equals(card.getActive()) || card.getUser().getId() != user.getId()) {
+            throw new IllegalArgumentException("Cartao indisponivel");
+        }
+        return card;
+    }
+
+    private boolean isActiveUserBill(Bill bill) {
+        Integer userId = UserSession.getId();
+        return userId != null && bill.getUser().getId() == userId;
+    }
+
+    private LocalDate paymentDateFor(BillDto dto, int installmentNumber) {
+        if (dto.getBillInstallments() == null) {
+            return null;
+        }
+        return dto.getBillInstallments().stream()
+                .filter(installment -> installment.getInstallmentNumber() == installmentNumber)
+                .map(BillInstallmentDto::getPaymentDate)
+                .filter(paymentDate -> paymentDate != null)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private boolean isPaidOnCreation(TypePayment typePayment) {
+        return typePayment == TypePayment.MONEY
+                || typePayment == TypePayment.DEBIT
+                || typePayment == TypePayment.PIX;
     }
     
 }

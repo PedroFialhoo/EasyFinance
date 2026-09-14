@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { DollarSign, Eye, EyeClosed, Lock, Mail, User } from "lucide-react"
@@ -10,12 +9,13 @@ export default function Settings(){
     const [email, setEmail] = useState("")
     const [username, setUsername] = useState("")
     const [password, setPassword] = useState("")
-    const [passwordConfirm, setPasswordConfirm] = useState("")
-    const [oldPassword, setOldPassword] = useState("")
+    const [currentPassword, setCurrentPassword] = useState("")
     const [passwordRepeat, setPasswordRepeat] = useState("")
-    const [message, setMessage] = useState("")
-    const [statusMessage, setStatusMessage] = useState(null)
-    const [revenue, setRevenue] = useState()
+    const [profileMessage, setProfileMessage] = useState("")
+    const [profileStatus, setProfileStatus] = useState(null)
+    const [passwordMessage, setPasswordMessage] = useState("")
+    const [passwordStatus, setPasswordStatus] = useState(null)
+    const [revenue, setRevenue] = useState("")
 
     const toggleShow = () =>{
         setShow(!show)
@@ -24,110 +24,150 @@ export default function Settings(){
     useEffect(() => {
         api.get("/user/get")
             .then(response => {
-                setRevenue(response.data.revenue)
+                setRevenue(response.data.revenue ?? "")
                 setEmail(response.data.email)
                 setUsername(response.data.username)
-                setOldPassword(response.data.password)
             })
             .catch(err => console.log("Erro:", err));
     }, []);
 
-    const editAccount = () => {
-        if(password !== passwordRepeat){
-            setMessage("As senhas não conferem")
-            setStatusMessage(false)
-            return
-        }
-        if(passwordConfirm !== oldPassword){
-            setMessage("Confirme a senha atual corretamente para atualizar a conta")
-            setStatusMessage(false)
+    const updateProfile = () => {
+        const parsedRevenue = Number(revenue)
+        if (revenue === "" || !Number.isFinite(parsedRevenue) || parsedRevenue < 0) {
+            setProfileMessage("Informe uma receita maior ou igual a zero")
+            setProfileStatus(false)
             return
         }
         api.put('/user/update',{
-            revenue,
+            revenue: parsedRevenue,
             email,
             username,
-            password: password && password !== "" ? password : null
         })
-        .then(response => {
-            setMessage("Conta atualizada com sucesso!")
-            setStatusMessage(true)  
-            setPassword("")
-            setPasswordRepeat("")
-            setPasswordConfirm("")
+        .then(() => {
+            setProfileMessage("Dados atualizados com sucesso!")
+            setProfileStatus(true)
         })
         .catch(err => {
-            setMessage("Erro ao atualizar conta")
-            setStatusMessage(false)
+            setProfileMessage(err.response?.data || "Erro ao atualizar dados")
+            setProfileStatus(false)
+        })
+    }
+
+    const updatePassword = () => {
+        if(password !== passwordRepeat){
+            setPasswordMessage("As senhas não conferem")
+            setPasswordStatus(false)
+            return
+        }
+        if (!currentPassword) {
+            setPasswordMessage("Informe a senha atual")
+            setPasswordStatus(false)
+            return
+        }
+        api.put('/user/update-password',{
+            currentPassword,
+            newPassword: password,
+        })
+        .then(() => {
+            setPasswordMessage("Senha atualizada com sucesso!")
+            setPasswordStatus(true)
+            setPassword("")
+            setPasswordRepeat("")
+            setCurrentPassword("")
+        })
+        .catch(err => {
+            setPasswordMessage(err.response?.data || "Erro ao atualizar senha")
+            setPasswordStatus(false)
         })
     }
 
 return (
-  <div className="p-8 flex flex-col gap-7 w-[70%] self-center">
-    <div className="bg-slate-200 rounded-xl p-14 flex justify-center">
-      <form className="w-full flex flex-col gap-6">
-        <h1 className="text-2xl font-semibold text-green-900">Configurações da Conta</h1>
-
-        <div className="grid grid-cols-2 gap-8">
-          <div className="flex flex-col gap-5">
-            <div className="w-full">
-              <h1 className="text-lg text-green-900">Atualizar receita mensal</h1>
-              <div className="relative w-full">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-green-800" />
-                <Input value={revenue} type="number" placeholder="Receita" className="h-10 pl-10 pr-10 bg-slate-50" onChange={(e) => setRevenue(e.target.value)} />
-              </div>
-            </div>
-
-            <div className="w-full">
-              <h1 className="text-lg text-green-900">Nome de usuário</h1>
-              <div className="relative w-full">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-green-800" />
-                <Input value={username} type="text" placeholder="Usuário" className="h-10 pl-10 pr-10 bg-slate-50" onChange={(e) => setUsername(e.target.value)} />
-              </div>
-            </div>
-
-            <div className="w-full">
-              <h1 className="text-lg text-green-900">E-mail</h1>
-              <div className="relative w-full">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-green-800" />
-                <Input value={email} type="email" placeholder="E-mail" className="h-10 pl-10 pr-10 bg-slate-50" onChange={(e) => setEmail(e.target.value)} />
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-5">
-            <div className="w-full">
-              <h1 className="text-lg text-green-900">Nova senha</h1>
-              <div className="relative w-full">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-green-800" />
-                <Input value={password} type={show ? "text" : "password"} placeholder="Nova senha" className="h-10 pl-10 pr-10 bg-slate-50" onChange={(e) => setPassword(e.target.value)} />
-                {!show ? <Eye className="absolute right-3 top-1/2 -translate-y-1/2 text-green-700 cursor-pointer" onClick={toggleShow} /> : <EyeClosed className="absolute right-3 top-1/2 -translate-y-1/2 text-green-700 cursor-pointer" onClick={toggleShow} />}
-              </div>
-            </div>
-
-            <div className="w-full">
-              <h1 className="text-lg text-green-900">Confirmar nova senha</h1>
-              <div className="relative w-full">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-green-800" />
-                <Input value={passwordRepeat} type={show ? "text" : "password"} placeholder="Confirmar senha" className="h-10 pl-10 pr-10 bg-slate-50" onChange={(e) => setPasswordRepeat(e.target.value)} />
-                {!show ? <Eye className="absolute right-3 top-1/2 -translate-y-1/2 text-green-700 cursor-pointer" onClick={toggleShow} /> : <EyeClosed className="absolute right-3 top-1/2 -translate-y-1/2 text-green-700 cursor-pointer" onClick={toggleShow} />}
-              </div>
-            </div>
-
-            <div className="w-full">
-              <h1 className="text-lg text-green-900">Confirme a senha atual para editar a conta *</h1>
-              <div className="relative w-full">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-green-800" />
-                <Input value={passwordConfirm} type={show ? "text" : "password"} placeholder="Senha atual" className="h-10 pl-10 pr-10 bg-slate-50" onChange={(e) => setPasswordConfirm(e.target.value)} />
-                {!show ? <Eye className="absolute right-3 top-1/2 -translate-y-1/2 text-green-700 cursor-pointer" onClick={toggleShow} /> : <EyeClosed className="absolute right-3 top-1/2 -translate-y-1/2 text-green-700 cursor-pointer" onClick={toggleShow} />}
-              </div>
-            </div>
-          </div>
+  <div className="flex w-full max-w-6xl self-center p-4 lg:p-8">
+    <div className="flex w-full justify-center rounded-2xl border border-slate-300 bg-slate-200 p-4 shadow-sm lg:p-8">
+      <form className="flex w-full flex-col gap-6">
+        <div className="border-b border-slate-300 pb-5">
+          <h1 className="text-2xl font-semibold text-green-900">Configurações da conta</h1>
+          <p className="mt-1 text-slate-600">Atualize seus dados financeiros e credenciais em áreas separadas.</p>
         </div>
 
-        {message && <span className={statusMessage ? "text-green-600 self-start" : "text-red-600 self-start"}>{message}</span>}
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+          <section className="flex flex-col gap-5 rounded-2xl border border-slate-200 bg-slate-100 p-5 shadow-sm lg:p-6">
+            <div>
+              <div className="flex items-center gap-2 text-green-900">
+                <DollarSign className="size-5" />
+                <h2 className="text-lg font-semibold">Dados financeiros e perfil</h2>
+              </div>
+              <p className="mt-1 text-sm text-slate-600">Essas alterações não exigem confirmação de senha.</p>
+            </div>
 
-        <Button type="button" onClick={editAccount} className="bg-green-800 self-start text-lg font-normal hover:bg-green-900 hover:shadow-2xl">Atualizar conta</Button>
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-green-800">Receita mensal</label>
+              <div className="relative w-full">
+                <DollarSign className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-green-800" />
+                <Input value={revenue} type="number" min="0" step="0.01" placeholder="0,00" className="h-11 bg-slate-50 pl-10 pr-10" onChange={(e) => setRevenue(e.target.value)} />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-green-800">Nome de usuário</label>
+              <div className="relative w-full">
+                <User className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-green-800" />
+                <Input value={username} type="text" placeholder="Usuário" className="h-11 bg-slate-50 pl-10 pr-10" onChange={(e) => setUsername(e.target.value)} />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-green-800">E-mail</label>
+              <div className="relative w-full">
+                <Mail className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-green-800" />
+                <Input value={email} type="email" placeholder="E-mail" className="h-11 bg-slate-50 pl-10 pr-10" onChange={(e) => setEmail(e.target.value)} />
+              </div>
+            </div>
+
+            {profileMessage && <span className={profileStatus ? "text-sm text-green-600" : "text-sm text-red-600"}>{profileMessage}</span>}
+            <Button type="button" onClick={updateProfile} className="mt-auto self-start bg-green-800 text-base font-normal hover:bg-green-900 hover:shadow-lg">Salvar dados</Button>
+          </section>
+
+          <section className="flex flex-col gap-5 rounded-2xl border border-slate-200 bg-slate-100 p-5 shadow-sm lg:p-6">
+            <div>
+              <div className="flex items-center gap-2 text-green-900">
+                <Lock className="size-5" />
+                <h2 className="text-lg font-semibold">Alterar senha</h2>
+              </div>
+              <p className="mt-1 text-sm text-slate-600">Confirme a senha atual somente para alterar sua senha.</p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-green-800">Nova senha</label>
+              <div className="relative w-full">
+                <Lock className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-green-800" />
+                <Input value={password} type={show ? "text" : "password"} placeholder="Nova senha" className="h-11 bg-slate-50 pl-10 pr-10" onChange={(e) => setPassword(e.target.value)} />
+                {!show ? <Eye className="absolute right-3 top-1/2 size-4 -translate-y-1/2 cursor-pointer text-green-700" onClick={toggleShow} /> : <EyeClosed className="absolute right-3 top-1/2 size-4 -translate-y-1/2 cursor-pointer text-green-700" onClick={toggleShow} />}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-green-800">Confirmar nova senha</label>
+              <div className="relative w-full">
+                <Lock className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-green-800" />
+                <Input value={passwordRepeat} type={show ? "text" : "password"} placeholder="Repita a nova senha" className="h-11 bg-slate-50 pl-10 pr-10" onChange={(e) => setPasswordRepeat(e.target.value)} />
+                {!show ? <Eye className="absolute right-3 top-1/2 size-4 -translate-y-1/2 cursor-pointer text-green-700" onClick={toggleShow} /> : <EyeClosed className="absolute right-3 top-1/2 size-4 -translate-y-1/2 cursor-pointer text-green-700" onClick={toggleShow} />}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-green-800">Senha atual</label>
+              <div className="relative w-full">
+                <Lock className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-green-800" />
+                <Input value={currentPassword} type={show ? "text" : "password"} placeholder="Senha atual" className="h-11 bg-slate-50 pl-10 pr-10" onChange={(e) => setCurrentPassword(e.target.value)} />
+                {!show ? <Eye className="absolute right-3 top-1/2 size-4 -translate-y-1/2 cursor-pointer text-green-700" onClick={toggleShow} /> : <EyeClosed className="absolute right-3 top-1/2 size-4 -translate-y-1/2 cursor-pointer text-green-700" onClick={toggleShow} />}
+              </div>
+            </div>
+
+            {passwordMessage && <span className={passwordStatus ? "text-sm text-green-600" : "text-sm text-red-600"}>{passwordMessage}</span>}
+            <Button type="button" onClick={updatePassword} className="mt-auto self-start bg-green-800 text-base font-normal hover:bg-green-900 hover:shadow-lg">Atualizar senha</Button>
+          </section>
+        </div>
       </form>
     </div>
   </div>

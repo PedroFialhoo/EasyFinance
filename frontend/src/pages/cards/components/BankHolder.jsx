@@ -136,15 +136,15 @@ export default function BankHolder() {
   }
 
   return (
-    <div className="bg-slate-200 rounded-xl p-8">
-      <div className="flex justify-between items-baseline">
+    <div className="rounded-xl border border-slate-300 bg-slate-200 p-4 shadow-sm lg:p-8">
+      <div className="flex flex-wrap items-baseline justify-between gap-3">
         <h1 className="font-bold text-2xl text-green-800">Bancos e Titulares</h1> 
         <X className="text-green-700 hover:text-green-950" onClick={() => navigate('/app/cards')}/>             
       </div>      
-      <div className="flex min-h-36 mt-6 gap-8 justify-center">
-        <div className="bg-slate-100 rounded-2xl w-[40%] p-4 shadow-md flex flex-col">
+      <div className="mt-6 flex min-h-36 flex-col justify-center gap-6 xl:flex-row xl:gap-8">
+        <div className="flex w-full flex-col rounded-2xl border border-slate-200 bg-slate-100 p-4 shadow-sm xl:w-[40%]">
           <h1 className="font-bold text-2xl text-green-800 text-center">Bancos</h1> 
-          <div className="grid grid-cols-2 gap-5 mt-4 w-full place-items-center">
+          <div className="mt-4 grid w-full grid-cols-1 place-items-center gap-4 sm:grid-cols-2">
             {
               banks.map((bank) =>(
                 <BHCard
@@ -166,9 +166,9 @@ export default function BankHolder() {
             setName("")
             }}>Adicionar Banco <span className="font-semibold text-xl">+</span></Button> 
         </div>
-        <div className="bg-slate-100 rounded-2xl w-[40%] p-4 shadow-md flex flex-col">
+        <div className="flex w-full flex-col rounded-2xl border border-slate-200 bg-slate-100 p-4 shadow-sm xl:w-[40%]">
           <h1 className="font-bold text-2xl text-green-800 text-center">Titulares</h1> 
-          <div className="grid grid-cols-2 gap-5 mt-4 w-full place-items-center">
+          <div className="mt-4 grid w-full grid-cols-1 place-items-center gap-4 sm:grid-cols-2">
             {
               holders.map((holder) =>(
                 <BHCard
@@ -192,8 +192,8 @@ export default function BankHolder() {
         </div>
       </div>  
       {isActiveAdd && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-2xl w-145 min-h-44 flex flex-col p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="flex max-h-[calc(100dvh-2rem)] w-full max-w-xl flex-col overflow-y-auto rounded-xl bg-white p-4 shadow-2xl">
             <X className="text-green-800 hover:text-green-950 self-end" onClick={() => setIsActiveAdd(!isActiveAdd)}/>
             <div>
               <h1 className="font-bold text-2xl text-green-800">Adicionar</h1>
@@ -211,8 +211,8 @@ export default function BankHolder() {
         </div>
       )}
       {isActiveEdit && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-2xl w-145 min-h-44 flex flex-col p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="flex max-h-[calc(100dvh-2rem)] w-full max-w-xl flex-col overflow-y-auto rounded-xl bg-white p-4 shadow-2xl">
             <X className="text-green-800 hover:text-green-950 self-end" onClick={() => setIsActiveEdit(!isActiveEdit)}/>
             <div>
               <h1 className="font-bold text-2xl text-green-800">Editar</h1>
@@ -230,12 +230,12 @@ export default function BankHolder() {
         </div>
       )}
       {isActiveDelete && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-2xl w-145 min-h-44 flex flex-col p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="flex max-h-[calc(100dvh-2rem)] w-full max-w-xl flex-col overflow-y-auto rounded-xl bg-white p-4 shadow-2xl">
             <X className="text-green-800 hover:text-green-950 self-end" onClick={() => setIsActiveDelete(!isActiveDelete)}/>
             <div className="mt-6 self-center flex flex-col items-center">
-              <h1 className="font-bold text-2xl text-green-800">Tem certeza de que deseja excluir - <span className="capitalize text-slate-700">{name}</span> ?</h1>  
-              <div className="flex gap-4">
+              <h1 className="text-center text-xl font-bold text-green-800 lg:text-2xl">Tem certeza de que deseja excluir - <span className="capitalize text-slate-700">{name}</span> ?</h1>
+              <div className="flex flex-wrap justify-center gap-4">
                 <Button type="button" className="bg-red-800 self-center mt-3 text-lg font-normal hover:bg-red-900 hover:shadow-2xl" onClick={deleteFunc}>Sim</Button> 
                 <Button type="button" className="bg-green-800 self-center mt-3 text-lg font-normal hover:bg-green-900 hover:shadow-2xl" onClick={() => setIsActiveDelete(!isActiveDelete)}>Não</Button>   
               </div>                        

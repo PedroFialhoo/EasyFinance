@@ -73,8 +73,8 @@ export default function MyBills({ onAdd, reload, onEdit, setBill }){
   }, [])
 
   return (
-    <div className="bg-slate-200 rounded-xl p-4">
-      <div className="p-4 mb-3 flex justify-between items-center">
+    <div className="rounded-xl border border-slate-300 bg-slate-200 p-4 shadow-sm">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3 p-2 sm:p-4">
         <h1 className="font-bold text-2xl text-green-800">Minhas Contas</h1>
 
         <Button className="bg-green-800 text-lg hover:bg-green-900" onClick={onAdd}>
@@ -82,23 +82,23 @@ export default function MyBills({ onAdd, reload, onEdit, setBill }){
         </Button>
       </div>
 
-      <div className="flex items-center justify-center gap-6 mb-4">
+      <div className="mb-4 flex items-center justify-center gap-3 sm:gap-6">
         <ArrowLeft onClick={prevMonth} className="text-green-800 hover:text-green-900 cursor-pointer" />
 
-        <span className="w-64 text-center capitalize font-semibold text-2xl text-green-800">
+        <span className="w-52 text-center capitalize font-semibold text-xl text-green-800 sm:w-64 sm:text-2xl">
           {monthLabel}
         </span>
 
         <ArrowRight onClick={nextMonth} className="text-green-800 hover:text-green-900 cursor-pointer" />
       </div>
 
-      <div className="p-4">
-        <div className="flex items-baseline gap-6 mb-6">
-          <div className="relative ml-10 w-[30%]">
+      <div className="p-2 sm:p-4">
+        <div className="mb-6 flex flex-wrap items-baseline gap-4 sm:gap-6">
+          <div className="relative w-full lg:ml-6 lg:w-[45%]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-green-800" />
               <Input value={name} type="text" placeholder="Nome da conta" className="h-10 pl-10 pr-10 text-base! bg-slate-100" onChange={(e) => setName(e.target.value)}/>
           </div>
-          <div className="w-[20%] mb-4">
+          <div className="mb-4 w-full sm:w-64">
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
               <SelectTrigger className="h-10 w-full capitalize bg-slate-100">
                 <SelectValue placeholder="Selecione uma Categoria" />
@@ -120,7 +120,7 @@ export default function MyBills({ onAdd, reload, onEdit, setBill }){
         </div>
         
 
-        <div className="flex gap-3 flex-wrap pl-10">
+        <div className="flex flex-wrap gap-3">
           {filteredBills.map((bill) => (
             <BillCard key={bill.id} bill={bill} onEdit={onEdit} setBill={setBill} />
           ))}

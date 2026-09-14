@@ -1,3 +1,5 @@
+import { formatCurrency } from "@/lib/utils";
+
 export default function BillCard({ bill, onEdit, setBill }) {
   const installments = bill.billInstallments || [];
 
@@ -25,7 +27,7 @@ export default function BillCard({ bill, onEdit, setBill }) {
 
   return (
     <div
-      className="bg-slate-100 rounded-lg p-4 mb-3 shadow flex justify-between items-center w-[30%]  hover:-translate-y-2 transition-discrete"
+      className="mb-3 flex w-full cursor-pointer items-center justify-between rounded-lg bg-slate-100 p-4 shadow transition-discrete hover:-translate-y-2 sm:w-[calc(50%-0.375rem)] xl:w-[calc(33.333%-0.5rem)]"
       onClick={editBill}
     >
       <div>
@@ -42,15 +44,15 @@ export default function BillCard({ bill, onEdit, setBill }) {
               <span className="font-semibold">
                 {installmentNumber}/{totalInstallments}
               </span>{" "}
-              - R$ {currentInstallment.value.toFixed(2)}
+              - {formatCurrency(currentInstallment.value)}
             </p>
             <p className="text-sm mt-1">
-              Valor Total - R$ {bill.totalValue.toFixed(2)}
+              Valor Total - {formatCurrency(bill.totalValue)}
             </p>
           </>
         ) : (
           <p className="text-sm mt-1">
-            Valor - R$ {bill.totalValue.toFixed(2)}
+            Valor - {formatCurrency(bill.totalValue)}
           </p>
         )}
       </div>
