@@ -1,3 +1,5 @@
-const { contextBridge } = require("electron");
+const { contextBridge, ipcRenderer } = require("electron");
 
-contextBridge.exposeInMainWorld("api", {});
+contextBridge.exposeInMainWorld("easyfinance", {
+  showReminderNotification: payload => ipcRenderer.invoke("show-reminder-notification", payload),
+});

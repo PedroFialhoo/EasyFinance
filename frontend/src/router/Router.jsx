@@ -8,6 +8,7 @@ import Settings from "@/pages/settings/Settings";
 import BankHolder from "@/pages/cards/components/BankHolder";
 import Category from "@/pages/bills/components/Category";
 import Register from "@/pages/register/Register";
+import Calendar from "@/pages/calendar/Calendar";
 
 const Router = createHashRouter([
   {
@@ -45,6 +46,10 @@ const Router = createHashRouter([
             element: <BankHolder />,
           },
         ],
+      },
+      {
+        path: "calendar",
+        element: <Calendar />,
       },
       {
         path: "settings",

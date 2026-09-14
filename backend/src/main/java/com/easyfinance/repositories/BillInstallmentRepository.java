@@ -31,6 +31,34 @@ public interface BillInstallmentRepository extends JpaRepository<BillInstallment
     );
 
     List<BillInstallment> findByBillId(int billId);
+
+    @Query("""
+        SELECT bi
+        FROM BillInstallment bi
+        WHERE bi.bill.user.id = :userId
+        AND bi.paymentDate IS NULL
+        AND bi.dueDate <= :end
+        ORDER BY bi.dueDate ASC
+    """)
+    List<BillInstallment> findPendingByUserUntil(
+        @Param("userId") int userId,
+        @Param("end") LocalDate end
+    );
+
+    @Query("""
+        SELECT bi
+        FROM BillInstallment bi
+        WHERE bi.bill.user.id = :userId
+        AND bi.paymentDate IS NULL
+        AND bi.dueDate >= :start
+        AND bi.dueDate < :end
+        ORDER BY bi.dueDate ASC
+    """)
+    List<BillInstallment> findPendingByUserAndDueDateRange(
+        @Param("userId") int userId,
+        @Param("start") LocalDate start,
+        @Param("end") LocalDate end
+    );
     
     @Modifying
     @Transactional

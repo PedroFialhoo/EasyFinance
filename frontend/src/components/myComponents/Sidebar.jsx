@@ -1,7 +1,7 @@
 import { NavLink } from "react-router-dom"
 import logo from "@/assets/images/logo-w.png";
 
-function Sidebar({ links = [] }) {
+function Sidebar({ links = [], actions }) {
     return (
         <nav className="flex min-h-20 w-full items-center justify-between gap-6 bg-green-800 px-4 py-3 lg:px-6">
             <img src={logo} alt="Logo" className="w-28 self-center lg:w-36"/>
@@ -15,6 +15,7 @@ function Sidebar({ links = [] }) {
                     </li>
                 ))}
             </ul>
+            {actions}
         </nav>
     )
 }

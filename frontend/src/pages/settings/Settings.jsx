@@ -1,6 +1,6 @@
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { DollarSign, Eye, EyeClosed, Lock, Mail, User } from "lucide-react"
+import { Bell, DollarSign, Eye, EyeClosed, Lock, Mail, User } from "lucide-react"
 import { useEffect, useState } from "react"
 import { api } from "@/services/api"
 
@@ -16,6 +16,9 @@ export default function Settings(){
     const [passwordMessage, setPasswordMessage] = useState("")
     const [passwordStatus, setPasswordStatus] = useState(null)
     const [revenue, setRevenue] = useState("")
+    const [reminderEnabled, setReminderEnabled] = useState(true)
+    const [reminderDays, setReminderDays] = useState([])
+    const [reminderMessage, setReminderMessage] = useState("")
 
     const toggleShow = () =>{
         setShow(!show)
@@ -29,6 +32,12 @@ export default function Settings(){
                 setUsername(response.data.username)
             })
             .catch(err => console.log("Erro:", err));
+        api.get("/reminders/preferences")
+            .then(response => {
+                setReminderEnabled(response.data.enabled)
+                setReminderDays(response.data.daysBeforeDue)
+            })
+            .catch(() => {})
     }, []);
 
     const updateProfile = () => {
@@ -79,6 +88,20 @@ export default function Settings(){
             setPasswordMessage(err.response?.data || "Erro ao atualizar senha")
             setPasswordStatus(false)
         })
+    }
+
+    const toggleReminderDay = (day) => {
+        setReminderDays(days => days.includes(day) ? days.filter(value => value !== day) : [...days, day])
+    }
+
+    const updateReminders = () => {
+        if (reminderDays.length === 0) {
+            setReminderMessage("Selecione pelo menos um dia de aviso")
+            return
+        }
+        api.put("/reminders/preferences", { enabled: reminderEnabled, daysBeforeDue: reminderDays })
+            .then(() => setReminderMessage("Preferências de lembrete salvas!"))
+            .catch(err => setReminderMessage(err.response?.data || "Erro ao salvar lembretes"))
     }
 
 return (
@@ -168,6 +191,19 @@ return (
             <Button type="button" onClick={updatePassword} className="mt-auto self-start bg-green-800 text-base font-normal hover:bg-green-900 hover:shadow-lg">Atualizar senha</Button>
           </section>
         </div>
+
+        <section className="flex flex-col gap-5 rounded-2xl border border-slate-200 bg-slate-100 p-5 shadow-sm lg:p-6">
+          <div>
+            <div className="flex items-center gap-2 text-green-900"><Bell className="size-5" /><h2 className="text-lg font-semibold">Lembretes de vencimento</h2></div>
+            <p className="mt-1 text-sm text-slate-600">Os avisos aparecem enquanto o EasyFinance estiver aberto.</p>
+          </div>
+          <label className="flex items-center gap-3 text-sm font-medium text-green-800"><input type="checkbox" checked={reminderEnabled} onChange={event => setReminderEnabled(event.target.checked)} className="size-4 accent-green-800" />Ativar notificações</label>
+          <div className="flex flex-wrap gap-3">
+            {[7, 3, 1, 0].map(day => <label key={day} className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"><input type="checkbox" checked={reminderDays.includes(day)} onChange={() => toggleReminderDay(day)} className="size-4 accent-green-800" />{day === 0 ? "No vencimento" : `${day} dia${day > 1 ? "s" : ""} antes`}</label>)}
+          </div>
+          {reminderMessage && <span className={reminderMessage.includes("salvas") ? "text-sm text-green-600" : "text-sm text-red-600"}>{reminderMessage}</span>}
+          <Button type="button" onClick={updateReminders} className="self-start bg-green-800 text-base font-normal hover:bg-green-900 hover:shadow-lg">Salvar lembretes</Button>
+        </section>
       </form>
     </div>
   </div>

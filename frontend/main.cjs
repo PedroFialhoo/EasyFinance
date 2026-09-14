@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, dialog } = require("electron");
+const { app, BrowserWindow, Menu, Notification, dialog, ipcMain } = require("electron");
 const { spawn } = require("child_process");
 const fs = require("fs");
 const http = require("http");
@@ -107,6 +107,9 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+  ipcMain.handle("show-reminder-notification", (_event, { title, body }) => {
+    if (Notification.isSupported()) new Notification({ title, body }).show();
+  });
   const win = createWindow();
   startBackend(win);
 });
