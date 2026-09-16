@@ -222,7 +222,7 @@ return (
           <Button type="button" disabled={saving} onClick={updateReminders} className="self-start bg-green-800 text-base font-normal hover:bg-green-900 hover:shadow-lg">{saving ? "Salvando..." : "Salvar lembretes"}</Button>
         </section>
       </form>
-      <Feedback message={profileMessage || passwordMessage || reminderMessage} error={profileStatus === false || passwordStatus === false || reminderMessage.startsWith("Erro") || reminderMessage.startsWith("Selecione")} />
+      <Feedback message={profileMessage || passwordMessage || reminderMessage} error={profileStatus === false || passwordStatus === false || (typeof reminderMessage === "string" && (reminderMessage.startsWith("Erro") || reminderMessage.startsWith("Selecione")))} />
     </div>
   </main>
 )

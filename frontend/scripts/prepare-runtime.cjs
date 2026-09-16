@@ -11,4 +11,9 @@ if (!fs.existsSync(source)) {
 }
 
 fs.rmSync(destination, { recursive: true, force: true });
-fs.cpSync(source, destination, { recursive: true });
+fs.cpSync(source, destination, {
+  recursive: true,
+  dereference: true,
+  // Ubuntu's JDK package ships this as a broken source-archive symlink.
+  filter: (src) => path.basename(src) !== "src.zip",
+});

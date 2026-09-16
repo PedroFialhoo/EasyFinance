@@ -70,3 +70,5 @@ target
 *.asar
 
 frontend/jre/
+
+dados/
