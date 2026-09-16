@@ -19,6 +19,8 @@ public interface BillRepository extends JpaRepository<Bill, Integer> {
 
     List<Bill> findByCategoryId(Integer categoryId);
 
+    List<Bill> findByUserIdAndFixedRecurringTrueAndCancelledFalse(Integer userId);
+
     @Query("""
         SELECT DISTINCT b
         FROM Bill b

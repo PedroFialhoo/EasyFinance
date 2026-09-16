@@ -24,4 +24,9 @@ public class BillDto {
     //pro caso de contas com uma parcela
     private List<BillInstallmentDto> billInstallments;
     private boolean hasPaidInstallments;
+    private boolean fixedRecurring;
+    private LocalDate recurrenceStartDate;
+    private LocalDate recurrenceEndDate;
+    private boolean cancelled;
+    private List<BillAttachmentDto> attachments;
 }

@@ -34,6 +34,9 @@ import jakarta.transaction.Transactional;
 @Service
 public class BillService {
     @Autowired
+    private BalanceService balanceService;
+
+    @Autowired
     private BillRepository billRepository;
 
     @Autowired
@@ -51,8 +54,12 @@ public class BillService {
     @Autowired 
     private BillInstallmentService billInstallmentService;
 
+    @Autowired
+    private BillAttachmentService billAttachmentService;
+
     public List<BillDto> getAll(){
         int userId = UserSession.getId();
+        ensureRecurringOccurrencesThrough(userId, LocalDate.now().plusMonths(11));
         Optional<List<Bill>> optBills = billRepository.findByUserId(userId);
         if(optBills.isEmpty()){
             return null;
@@ -68,7 +75,7 @@ public class BillService {
     }
 
     @Transactional
-    public Boolean create(BillDto dto){
+    public Integer create(BillDto dto){
         validateBill(dto);
         User user = getActiveUser();
 
@@ -80,14 +87,24 @@ public class BillService {
         bill.setCategory(category);
         bill.setCard(card);
         bill.setName(dto.getName());
-        bill.setNumberInstallments(dto.getNumberInstallments());
+        bill.setFixedRecurring(dto.isFixedRecurring());
+        bill.setCancelled(false);
+        bill.setRecurrenceStartDate(dto.isFixedRecurring() ? dto.getFirstDueDate() : null);
+        bill.setRecurrenceEndDate(dto.isFixedRecurring() ? dto.getRecurrenceEndDate() : null);
+        bill.setNumberInstallments(dto.isFixedRecurring() ? 1 : dto.getNumberInstallments());
                     
         bill.setTypePayment(dto.getTypePayment());
         bill.setTotalValue(dto.getTotalValue());
     
         billRepository.save(bill); 
         
-        LocalDate firstDueDate = dto.getFirstDueDate();
+        LocalDate firstDueDate = card != null && card.getDueDay() != null
+                ? dueDateFor(card.getDueDay(), dto.getFirstDueDate())
+                : dto.getFirstDueDate();
+        if (dto.isFixedRecurring()) {
+            createRecurringOccurrences(bill, firstDueDate, recurringGenerationEnd(bill, firstDueDate));
+            return bill.getId();
+        }
         double value = dto.getTotalValue() / dto.getNumberInstallments();
 
         for (int i = 1; i <= dto.getNumberInstallments(); i++) {
@@ -98,10 +115,13 @@ public class BillService {
                 paymentDate = dueDate; 
             }
 
-            billInstallmentService.create(bill, i, value, dueDate, paymentDate);
+            BillInstallment installment = billInstallmentService.create(bill, i, value, dueDate, paymentDate);
+            if (paymentDate != null) {
+                balanceService.recordPaidInstallment(installment);
+            }
         }
         
-        return true;
+        return bill.getId();
     }
 
     public List<BillDto> getByMonth(GetBillDto dto){
@@ -109,6 +129,7 @@ public class BillService {
 
         LocalDate start = LocalDate.of(dto.getYear(), dto.getMonth(), 1);
         LocalDate end = start.withDayOfMonth(start.lengthOfMonth());
+        ensureRecurringOccurrencesThrough(userId, end);
 
         List<Bill> bills = billRepository.findByFilters(userId, start, end, dto.getCategoryId());
         List<BillDto> dtos = new ArrayList<>();
@@ -120,6 +141,28 @@ public class BillService {
         return dtos;
     }
 
+    public List<BillDto> getByDateRange(GetBillDto dto) {
+        if (dto == null || dto.getStartDate() == null || dto.getEndDate() == null) {
+            throw new IllegalArgumentException("Informe o inicio e o fim do periodo");
+        }
+        if (dto.getEndDate().isBefore(dto.getStartDate())) {
+            throw new IllegalArgumentException("O fim do periodo deve ser posterior ao inicio");
+        }
+        int userId = UserSession.getId();
+        ensureRecurringOccurrencesThrough(userId, dto.getEndDate());
+
+        List<BillDto> dtos = new ArrayList<>();
+        for (Bill bill : billRepository.findByFilters(userId, dto.getStartDate(), dto.getEndDate(), dto.getCategoryId())) {
+            BillDto billDto = toDto(bill, 0, 0);
+            billDto.setBillInstallments(billDto.getBillInstallments().stream()
+                    .filter(installment -> !installment.getDueDate().isBefore(dto.getStartDate())
+                            && !installment.getDueDate().isAfter(dto.getEndDate()))
+                    .toList());
+            dtos.add(billDto);
+        }
+        return dtos;
+    }
+
     private BillDto toDto(Bill bill, int month, int year){
         BillDto billDto = new BillDto();
         billDto.setId(bill.getId());
@@ -127,6 +170,10 @@ public class BillService {
         billDto.setNumberInstallments(bill.getNumberInstallments());
         billDto.setTotalValue(bill.getTotalValue());
         billDto.setTypePayment(bill.getTypePayment());
+        billDto.setFixedRecurring(bill.isFixedRecurring());
+        billDto.setRecurrenceStartDate(bill.getRecurrenceStartDate());
+        billDto.setRecurrenceEndDate(bill.getRecurrenceEndDate());
+        billDto.setCancelled(bill.isCancelled());
 
         List<BillInstallment> installments = billInstallmentRepository.findByBillId(bill.getId());
         billDto.setHasPaidInstallments(installments.stream()
@@ -152,6 +199,7 @@ public class BillService {
         }
 
         billDto.setBillInstallments(installmentDtos);
+        billDto.setAttachments(billAttachmentService.list(bill));
 
         if (bill.getCard() != null) {
             CardDto cardDto = new CardDto();
@@ -211,6 +259,7 @@ public class BillService {
 
         billInstallment.setPaymentDate(LocalDate.now());
         billInstallmentRepository.save(billInstallment);
+        balanceService.recordPaidInstallment(billInstallment);
         return true;
     }
     
@@ -228,6 +277,9 @@ public class BillService {
             return false;
         }
         validateBill(dto);
+        if (bill.isFixedRecurring()) {
+            return editRecurringBill(bill, dto);
+        }
         if (dto.getNumberInstallments() != bill.getNumberInstallments()) {
             throw new IllegalArgumentException("Nao e permitido alterar a quantidade de parcelas");
         }
@@ -242,7 +294,8 @@ public class BillService {
         }
 
         bill.setCategory(getCategory(dto));
-        bill.setCard(getCard(dto.getCard(), dto.getTypePayment(), bill.getUser()));
+        Card card = getCard(dto.getCard(), dto.getTypePayment(), bill.getUser());
+        bill.setCard(card);
                
         bill.setName(dto.getName());        
                     
@@ -252,19 +305,26 @@ public class BillService {
         bill.setNumberInstallments(dto.getNumberInstallments());
         billRepository.save(bill); 
         
+        LocalDate firstDueDate = card != null && card.getDueDay() != null
+                ? dueDateFor(card.getDueDay(), dto.getFirstDueDate())
+                : dto.getFirstDueDate();
         double value = dto.getTotalValue() / dto.getNumberInstallments();
         for (BillInstallment installment : installments) {
+            boolean wasPaid = installment.getPaymentDate() != null;
             installment.setValue(value);
             if (dto.getNumberInstallments() == 1) {
-                installment.setDueDate(dto.getFirstDueDate());
+                installment.setDueDate(firstDueDate);
                 LocalDate paymentDate = paymentDateFor(dto, installment.getInstallmentNumber());
                 if (paymentDate != null) {
                     installment.setPaymentDate(paymentDate);
                 } else if (installment.getPaymentDate() == null && isPaidOnCreation(dto.getTypePayment())) {
-                    installment.setPaymentDate(dto.getFirstDueDate());
+                    installment.setPaymentDate(firstDueDate);
                 }
             }
             billInstallmentRepository.save(installment);
+            if (!wasPaid && installment.getPaymentDate() != null) {
+                balanceService.recordPaidInstallment(installment);
+            }
         }
         
         return true;
@@ -276,9 +336,43 @@ public class BillService {
         if (optBill.isEmpty() || !isActiveUserBill(optBill.get())) {
             return false;
         }
+        List<BillInstallment> installments = billInstallmentRepository.findByBillId(id);
+        for (BillInstallment installment : installments) {
+            if (installment.getPaymentDate() != null) {
+                balanceService.reversePaidInstallment(installment);
+            }
+        }
+        billAttachmentService.deleteAll(optBill.get());
         billInstallmentRepository.deleteAllByBillId(id);
         billRepository.deleteById(id);
         return true;
+    }
+
+    @Transactional
+    public boolean cancelRecurringBill(int id) {
+        Optional<Bill> optBill = billRepository.findById(id);
+        if (optBill.isEmpty() || !isActiveUserBill(optBill.get()) || !optBill.get().isFixedRecurring() || optBill.get().isCancelled()) {
+            return false;
+        }
+        Bill bill = optBill.get();
+        bill.setCancelled(true);
+        billRepository.save(bill);
+        billInstallmentRepository.deletePendingByBillIdAfter(id, LocalDate.now());
+        return true;
+    }
+
+    @Transactional
+    public void ensureRecurringOccurrencesThrough(int userId, LocalDate endDate) {
+        for (Bill bill : billRepository.findByUserIdAndFixedRecurringTrueAndCancelledFalse(userId)) {
+            LocalDate startDate = bill.getRecurrenceStartDate();
+            if (startDate == null || endDate.isBefore(startDate)) {
+                continue;
+            }
+            LocalDate lastDate = bill.getRecurrenceEndDate() == null || bill.getRecurrenceEndDate().isAfter(endDate)
+                    ? endDate
+                    : dueDateForBill(bill, bill.getRecurrenceEndDate());
+            createRecurringOccurrences(bill, dueDateForBill(bill, startDate), lastDate);
+        }
     }
 
     private User getActiveUser() {
@@ -288,6 +382,10 @@ public class BillService {
         }
         return userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Conta ativa nao encontrada"));
+    }
+
+    private LocalDate dueDateFor(int dueDay, LocalDate month) {
+        return month.withDayOfMonth(Math.min(dueDay, month.lengthOfMonth()));
     }
 
     private void validateBill(BillDto dto) {
@@ -308,6 +406,10 @@ public class BillService {
         }
         if (dto.getNumberInstallments() < 1) {
             throw new IllegalArgumentException("Numero de parcelas deve ser maior que zero");
+        }
+        if (dto.isFixedRecurring() && dto.getRecurrenceEndDate() != null
+                && dto.getRecurrenceEndDate().isBefore(dto.getFirstDueDate())) {
+            throw new IllegalArgumentException("O termino da recorrencia deve ser posterior ao inicio");
         }
     }
 
@@ -337,6 +439,10 @@ public class BillService {
         return userId != null && bill.getUser().getId() == userId;
     }
 
+    public Optional<Bill> findActiveUserBill(int id) {
+        return billRepository.findById(id).filter(this::isActiveUserBill);
+    }
+
     private LocalDate paymentDateFor(BillDto dto, int installmentNumber) {
         if (dto.getBillInstallments() == null) {
             return null;
@@ -353,6 +459,57 @@ public class BillService {
         return typePayment == TypePayment.MONEY
                 || typePayment == TypePayment.DEBIT
                 || typePayment == TypePayment.PIX;
+    }
+
+    private Boolean editRecurringBill(Bill bill, BillDto dto) {
+        if (bill.isCancelled()) {
+            throw new IllegalArgumentException("Uma conta fixa cancelada nao pode ser editada");
+        }
+        bill.setCategory(getCategory(dto));
+        bill.setCard(getCard(dto.getCard(), dto.getTypePayment(), bill.getUser()));
+        bill.setName(dto.getName());
+        bill.setTypePayment(dto.getTypePayment());
+        bill.setTotalValue(dto.getTotalValue());
+        bill.setRecurrenceEndDate(dto.getRecurrenceEndDate());
+        billRepository.save(bill);
+
+        LocalDate nextDueDate = dueDateForBill(bill, LocalDate.now().withDayOfMonth(1).plusMonths(1));
+        for (BillInstallment installment : billInstallmentRepository.findByBillId(bill.getId())) {
+            if (installment.getPaymentDate() == null && !installment.getDueDate().isBefore(nextDueDate)) {
+                installment.setValue(dto.getTotalValue());
+                billInstallmentRepository.save(installment);
+            }
+        }
+        ensureRecurringOccurrencesThrough(bill.getUser().getId(), recurringGenerationEnd(bill, nextDueDate));
+        return true;
+    }
+
+    private void createRecurringOccurrences(Bill bill, LocalDate firstDueDate, LocalDate lastDate) {
+        LocalDate dueDate = firstDueDate;
+        int occurrenceNumber = 1;
+        while (!dueDate.isAfter(lastDate)) {
+            if (!billInstallmentRepository.existsByBillIdAndDueDate(bill.getId(), dueDate)) {
+                billInstallmentService.create(bill, occurrenceNumber, bill.getTotalValue(), dueDate, null);
+            }
+            dueDate = dueDateForBill(bill, dueDate.plusMonths(1));
+            occurrenceNumber++;
+        }
+    }
+
+    private LocalDate recurringGenerationEnd(Bill bill, LocalDate firstDueDate) {
+        if (bill.getRecurrenceEndDate() != null) {
+            return dueDateForBill(bill, bill.getRecurrenceEndDate());
+        }
+        return firstDueDate.plusMonths(11);
+    }
+
+    private LocalDate dueDateForBill(Bill bill, LocalDate month) {
+        if (bill.getCard() != null && bill.getCard().getDueDay() != null) {
+            return dueDateFor(bill.getCard().getDueDay(), month);
+        }
+        LocalDate startDate = bill.getRecurrenceStartDate();
+        int dueDay = startDate == null ? month.getDayOfMonth() : startDate.getDayOfMonth();
+        return dueDateFor(dueDay, month);
     }
     
 }

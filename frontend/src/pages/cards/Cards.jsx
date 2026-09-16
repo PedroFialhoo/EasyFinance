@@ -4,7 +4,7 @@ import MyCards from "./components/MyCards";
 import EditCard from "./components/EditCard";
 import { Button } from "@/components/ui/button";
 import { Landmark, User } from "lucide-react";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 
 export default function Cards() {
   const [isActiveAdd, setIsActiveAdd] = useState(false);
@@ -13,18 +13,20 @@ export default function Cards() {
   const [card, setCard] = useState(null);
   const refreshCards = () => setReload((prev) => !prev);
   const navigate = useNavigate()
+  const location = useLocation()
+  const bankHolderOpen = location.pathname === "/app/cards/banks-holders";
 
   return (
-    <div className="flex flex-col gap-5 p-4 lg:gap-7 lg:p-8">
-      <div>
+    <main className="app-page flex flex-col gap-5 lg:gap-7">
+      <div className="flex justify-end">
         <Button
           type="button"
-          className="bg-green-800 self-start text-lg font-normal hover:bg-green-900 hover:shadow-2xl"
-          onClick={() => navigate('/app/cards/banks-holders')}
+          variant="outline"
+          onClick={() => navigate(bankHolderOpen ? '/app/cards' : '/app/cards/banks-holders')}
         >
-          <Landmark className="text-white" />
-          <User className="text-white" />
-          Bancos e titulares
+          <Landmark />
+          <User />
+          {bankHolderOpen ? 'Fechar bancos e titulares' : 'Bancos e titulares'}
         </Button>
       </div>
       <Outlet />
@@ -38,7 +40,7 @@ export default function Cards() {
 
       {isActiveAdd && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-xl overflow-y-auto rounded-xl bg-white shadow-2xl">
+          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-xl overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-xl">
             <CreateCard
               onClose={() => setIsActiveAdd(false)}
               onCreated={refreshCards}
@@ -49,7 +51,7 @@ export default function Cards() {
 
       {isActiveEdit && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-xl overflow-y-auto rounded-xl bg-white shadow-2xl">
+          <div className="max-h-[calc(100dvh-2rem)] w-full max-w-xl overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-xl">
             <EditCard
               onClose={() => setIsActiveEdit(false)}
               onCreated={refreshCards}
@@ -58,6 +60,6 @@ export default function Cards() {
           </div>
         </div>
       )}
-    </div>
+    </main>
   );
 }

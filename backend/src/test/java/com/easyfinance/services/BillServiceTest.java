@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -57,6 +58,12 @@ class BillServiceTest {
     @Mock
     private BillInstallmentService billInstallmentService;
 
+    @Mock
+    private BalanceService balanceService;
+
+    @Mock
+    private BillAttachmentService billAttachmentService;
+
     @InjectMocks
     private BillService billService;
 
@@ -101,6 +108,25 @@ class BillServiceTest {
 
         verify(billRepository).save(any(Bill.class));
         verify(billInstallmentService, times(3)).create(any(Bill.class), any(Integer.class), any(Double.class), any(LocalDate.class), any());
+    }
+
+    @Test
+    void createFixedBillGeneratesEveryMonthUntilItsEndDate() {
+        UserSession.setId(1);
+        User user = user(1);
+        Category category = new Category();
+        category.setId(1);
+        BillDto dto = validBillDto();
+        dto.setFixedRecurring(true);
+        dto.setFirstDueDate(LocalDate.of(2026, 1, 10));
+        dto.setRecurrenceEndDate(LocalDate.of(2026, 12, 1));
+
+        when(userRepository.findById(1)).thenReturn(Optional.of(user));
+        when(categoryRepository.findById(1)).thenReturn(Optional.of(category));
+
+        billService.create(dto);
+
+        verify(billInstallmentService, times(12)).create(any(Bill.class), any(Integer.class), any(Double.class), any(LocalDate.class), any());
     }
 
     @Test
@@ -200,6 +226,45 @@ class BillServiceTest {
 
         verify(billInstallmentRepository, never()).deleteAllByBillId(any(Integer.class));
         verify(billRepository, never()).deleteById(any(Integer.class));
+    }
+
+    @Test
+    void deleteReversesOnlyPaidInstallments() {
+        UserSession.setId(1);
+        Bill bill = new Bill();
+        bill.setId(10);
+        bill.setUser(user(1));
+        BillInstallment paid = installment(bill, 1, LocalDate.of(2026, 1, 10));
+        paid.setPaymentDate(LocalDate.of(2026, 1, 10));
+        BillInstallment unpaid = installment(bill, 2, LocalDate.of(2026, 2, 10));
+
+        when(billRepository.findById(10)).thenReturn(Optional.of(bill));
+        when(billInstallmentRepository.findByBillId(10)).thenReturn(List.of(paid, unpaid));
+
+        assertTrue(billService.delete(10));
+
+        verify(balanceService).reversePaidInstallment(paid);
+        verify(balanceService, never()).reversePaidInstallment(unpaid);
+        verify(billAttachmentService).deleteAll(bill);
+        verify(billInstallmentRepository).deleteAllByBillId(10);
+        verify(billRepository).deleteById(10);
+    }
+
+    @Test
+    void cancelFixedBillKeepsPaidInstallmentsAndRemovesFuturePendingOnes() {
+        UserSession.setId(1);
+        Bill bill = new Bill();
+        bill.setId(10);
+        bill.setUser(user(1));
+        bill.setFixedRecurring(true);
+
+        when(billRepository.findById(10)).thenReturn(Optional.of(bill));
+
+        assertTrue(billService.cancelRecurringBill(10));
+
+        assertTrue(bill.isCancelled());
+        verify(billRepository).save(bill);
+        verify(billInstallmentRepository).deletePendingByBillIdAfter(org.mockito.ArgumentMatchers.eq(10), any(LocalDate.class));
     }
 
     private BillDto validBillDto() {

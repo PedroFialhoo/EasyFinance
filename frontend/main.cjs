@@ -107,8 +107,47 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
-  ipcMain.handle("show-reminder-notification", (_event, { title, body }) => {
-    if (Notification.isSupported()) new Notification({ title, body }).show();
+  ipcMain.handle("show-reminder-notification", (event, { title, body, reminder }) => {
+    if (!Notification.isSupported()) return;
+    const notification = new Notification({ title, body });
+    notification.on("click", () => {
+      const win = BrowserWindow.fromWebContents(event.sender);
+      if (!win || win.isDestroyed()) return;
+      if (win.isMinimized()) win.restore();
+      win.show();
+      win.focus();
+      win.webContents.send("open-reminder", reminder);
+    });
+    notification.show();
+  });
+  ipcMain.handle("save-pdf-report", async (event, { html, defaultName }) => {
+    if (typeof html !== "string" || !html.trim()) {
+      throw new Error("Relatório inválido.");
+    }
+    const owner = BrowserWindow.fromWebContents(event.sender);
+    const { canceled, filePath } = await dialog.showSaveDialog(owner, {
+      title: "Salvar relatório em PDF",
+      defaultPath: defaultName || "relatorio-de-contas.pdf",
+      filters: [{ name: "PDF", extensions: ["pdf"] }],
+    });
+    if (canceled || !filePath) return { canceled: true };
+
+    const reportWindow = new BrowserWindow({
+      show: false,
+      webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true },
+    });
+    try {
+      await reportWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+      const pdf = await reportWindow.webContents.printToPDF({
+        pageSize: "A4",
+        printBackground: true,
+        marginsType: 1,
+      });
+      await fs.promises.writeFile(filePath, pdf);
+      return { canceled: false, filePath };
+    } finally {
+      if (!reportWindow.isDestroyed()) reportWindow.destroy();
+    }
   });
   const win = createWindow();
   startBackend(win);

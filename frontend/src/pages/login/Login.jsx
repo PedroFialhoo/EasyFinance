@@ -6,6 +6,7 @@ import { Eye, EyeClosed, Lock, Mail } from "lucide-react"
 import { useEffect, useState } from "react"
 import { api } from "@/services/api"
 import { Checkbox } from "@/components/ui/checkbox"
+import Feedback from "@/components/Feedback"
 
 const REMEMBERED_CREDENTIALS_KEY = "easyfinance.rememberedCredentials"
 
@@ -40,6 +41,7 @@ export default function Login() {
     const [password, setPassword] = useState("")
     const [message, setMessage] = useState("")
     const [statusMessage, setStatusMessage] = useState(null)
+    const [isSubmitting, setIsSubmitting] = useState(false)
     const navigate = useNavigate()
     const toggleShow = () =>{
         setShow(!show)
@@ -48,7 +50,7 @@ export default function Login() {
     useEffect(() => {
         let mounted = true
 
-        const restoreSession = async () => {
+        const restoreCredentials = async () => {
             let savedCredentials = null
 
             try {
@@ -63,14 +65,7 @@ export default function Login() {
                     setPassword(savedCredentials.password)
                     setChecked(true)
                 }
-
-                try {
-                    await loginWithCredentials({ ...savedCredentials, rememberMe: true })
-                    if (mounted) navigate("/app/home")
-                    return
-                } catch {
-                    removeRememberedCredentials()
-                }
+                return
             }
 
             try {
@@ -84,81 +79,81 @@ export default function Login() {
                     setChecked(true)
                 }
 
-                await loginWithCredentials({
-                    identifier: credentials.email,
-                    password: credentials.password,
-                    rememberMe: true,
-                })
-                if (mounted) navigate("/app/home")
             } catch {
-                // Invalid or unavailable saved credentials leave the login form available.
+                // No remembered credentials leave the login form available.
             }
         }
 
-        restoreSession()
+        restoreCredentials()
         return () => {
             mounted = false
         }
     }, [navigate])
 
     const login = async () =>{
+        if (isSubmitting) return
         setMessage("")
         setStatusMessage(null)
+        if (!identifier.trim() || !password) {
+            setMessage("Preencha e-mail ou nome de usuário e senha")
+            setStatusMessage(false)
+            return
+        }
+        setIsSubmitting(true)
         try {
             await loginWithCredentials({ identifier, password, rememberMe: checked })
             setMessage("Login bem sucedido")
             setStatusMessage(true)
             navigate("/app/home")
         } catch {
-            setMessage("Erro ao realizar login")
+            setMessage("Não foi possível entrar. Verifique seus dados e tente novamente.")
             setStatusMessage(false)
+        } finally {
+            setIsSubmitting(false)
         }
     }
 
     return (
-        <div className="flex min-h-screen overflow-y-auto">
-            <div className="flex w-[38%] items-center justify-center bg-green-800 p-8">
+        <div className="flex min-h-screen overflow-y-auto bg-slate-50">
+            <div className="hidden w-[38%] items-center justify-center bg-green-900 p-8 lg:flex">
                 <img src={logo} alt="logo EasyFinance" className="w-full max-w-xs"/>
             </div>
-            <div className="flex w-[62%] flex-col items-center justify-center gap-10 px-8 py-10 lg:gap-14">
-                <h1 className="w-full max-w-xl text-3xl font-normal text-green-800 lg:text-4xl xl:text-5xl">Cuidar do seu dinheiro nunca foi tão simples.</h1>
-                <form className="flex w-full max-w-xl flex-col justify-center gap-5" onSubmit={(event) => {
+            <div className="flex w-full flex-col items-center justify-center gap-8 px-5 py-10 lg:w-[62%] lg:gap-10 lg:px-12">
+                <img src={logo} alt="logo EasyFinance" className="w-44 lg:hidden"/>
+                <div className="w-full max-w-xl"><p className="text-sm font-bold uppercase tracking-[0.18em] text-green-700">EasyFinance</p><h1 className="mt-3 text-3xl font-semibold tracking-tight text-green-900 lg:text-4xl">Cuidar do seu dinheiro nunca foi tão simples.</h1><p className="mt-3 text-slate-600">Entre para acompanhar suas contas, cartões e planejamento mensal.</p></div>
+                <form className="flex w-full max-w-xl flex-col justify-center gap-5 p-6 sm:p-8" onSubmit={(event) => {
                     event.preventDefault()
                     login()
                 }}>
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-green-800">E-mail ou nome de usuário</label>
+                        <label htmlFor="login-identifier" className="text-sm font-medium text-green-800">E-mail ou nome de usuário *</label>
                         <div className="relative w-full">
                             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-green-800" />
-                            <Input value={identifier} type="text" placeholder="E-mail ou nome de usuário" className="h-10 pl-10 pr-10 text-base!" onChange={(e) => setIdentifier(e.target.value)}/>
+                            <Input id="login-identifier" value={identifier} required type="text" placeholder="E-mail ou nome de usuário" className="h-10 pl-10 pr-10 text-base!" onChange={(e) => setIdentifier(e.target.value)}/>
                         </div>
                     </div>
                     
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-green-800">Senha</label>
+                        <label htmlFor="login-password" className="text-sm font-medium text-green-800">Senha *</label>
                         <div className="relative w-full">
                             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-green-800" />
-                            <Input value={password} type={show ? "text" : "password"} placeholder="Senha" className="h-10 pl-10 pr-10 text-base!" onChange={(e) => setPassword(e.target.value)}/>
-                            {!show ? (<Eye className="absolute right-3 top-1/2 -translate-y-1/2 text-green-700 cursor-pointer" onClick={toggleShow}/>) : (<EyeClosed className="absolute right-3 top-1/2 -translate-y-1/2 text-green-700 cursor-pointer" onClick={toggleShow} />)}
+                            <Input id="login-password" value={password} required type={show ? "text" : "password"} placeholder="Senha" className="h-10 pl-10 pr-10 text-base!" onChange={(e) => setPassword(e.target.value)}/>
+                            <button type="button" aria-label={show ? "Ocultar senha" : "Mostrar senha"} className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-green-700 hover:bg-green-100" onClick={toggleShow}>{show ? <EyeClosed /> : <Eye />}</button>
                         </div>
                     </div>
 
                     <div className="w-full">
-                        <Checkbox className="border-slate-600 data-[state=checked]:bg-green-800" checked={checked} onCheckedChange={setChecked}/>
-                        <label className="ml-2 text-slate-500">Lembrar de mim</label>
+                        <Checkbox id="remember-me" className="border-slate-600 data-[state=checked]:bg-green-800" checked={checked} onCheckedChange={setChecked}/>
+                        <label htmlFor="remember-me" className="ml-2 text-slate-500">Lembrar de mim</label>
                     </div>
                     
-                    {message && (
-                        <span className={statusMessage ? "text-green-600 self-start" : "text-red-600 self-start"}>
-                            {message}
-                        </span>
-                    )}
-                    <div className="flex flex-col w-full">
-                        <Link className="text-slate-500 hover:text-slate-800">Esqueceu a senha?</Link>
-                        <Link className="text-slate-500 hover:text-slate-800" to={"/register"}>Não tem uma conta? Cadastre-se</Link> 
+                    <div className="flex flex-col gap-1.5 text-sm">
+                        <p className="text-slate-500">Para recuperar sua senha, entre em contato com o suporte da aplicação.</p>
+                        <Link className="font-medium text-green-800 hover:text-green-950" to={"/register"}>Não tem uma conta? Cadastre-se</Link>
                     </div>                    
-                    <Button type="submit" className="bg-green-800 self-start text-lg font-normal hover:bg-green-900 hover:shadow-2xl">Entrar</Button>
+                    <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>{isSubmitting ? "Entrando..." : "Entrar"}</Button>
                 </form>
+                <Feedback message={message} error={statusMessage === false} />
             </div>
         </div>
     )

@@ -19,6 +19,7 @@ public class Card {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
     private String number;
+    private Integer dueDay;
     @ManyToOne
     @JoinColumn(name = "holder_id")
     private Holder holder;

@@ -31,20 +31,24 @@ public class ReminderService {
     private final NotificationPreferenceRepository preferenceRepository;
     private final InstallmentNotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final BillService billService;
 
     public ReminderService(BillInstallmentRepository installmentRepository,
             NotificationPreferenceRepository preferenceRepository,
             InstallmentNotificationRepository notificationRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            BillService billService) {
         this.installmentRepository = installmentRepository;
         this.preferenceRepository = preferenceRepository;
         this.notificationRepository = notificationRepository;
         this.userRepository = userRepository;
+        this.billService = billService;
     }
 
     public ReminderSummaryDto getSummary() {
         User user = getActiveUser();
         LocalDate today = LocalDate.now();
+        billService.ensureRecurringOccurrencesThrough(user.getId(), today.plusDays(30));
         List<BillInstallment> installments = installmentRepository.findPendingByUserUntil(user.getId(), today.plusDays(7));
         ReminderSummaryDto summary = new ReminderSummaryDto();
 
@@ -69,6 +73,7 @@ public class ReminderService {
         User user = getActiveUser();
         YearMonth selectedMonth = YearMonth.of(year, month);
         LocalDate today = LocalDate.now();
+        billService.ensureRecurringOccurrencesThrough(user.getId(), selectedMonth.atEndOfMonth());
         return installmentRepository.findPendingByUserAndDueDateRange(user.getId(), selectedMonth.atDay(1), selectedMonth.plusMonths(1).atDay(1))
                 .stream()
                 .map(installment -> toDto(installment, today))
@@ -103,6 +108,7 @@ public class ReminderService {
             return List.of();
         }
         LocalDate today = LocalDate.now();
+        billService.ensureRecurringOccurrencesThrough(user.getId(), today.plusDays(30));
         List<Integer> configuredDays = parseDays(preference.getDaysBeforeDue());
         List<ReminderDto> notifications = new ArrayList<>();
         for (BillInstallment installment : installmentRepository.findPendingByUserUntil(user.getId(), today.plusDays(30))) {

@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 public class CardDto {
     private Integer id;
     private String number; 
+    private Integer dueDay;
     private HolderDto holder;
     private BankDto bank;
     private Boolean active;

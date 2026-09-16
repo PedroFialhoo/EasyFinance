@@ -1,10 +1,12 @@
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { Building2, Plus, UserRound, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import BHCard from "./BHCard";
 import { useEffect, useState } from "react";
 import { api } from "@/services/api";
 import { Input } from "@/components/ui/input";
+import Feedback from "@/components/Feedback";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 export default function BankHolder() {
   const navigate = useNavigate()
@@ -20,6 +22,7 @@ export default function BankHolder() {
   const refreshCards = () => setReload((prev) => !prev);
   const [message, setMessage] = useState("")
   const [statusMessage, setStatusMessage] = useState(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
       api.get("/bank/getAll")
@@ -45,6 +48,8 @@ export default function BankHolder() {
   }, [message])
 
   const createFunc = () => {
+    if (isSubmitting) return
+    setIsSubmitting(true)
     api.post(`/${type}/create`,{
       name: name
     })
@@ -69,12 +74,15 @@ export default function BankHolder() {
       } 
     })
     .finally(() => {
+      setIsSubmitting(false)
       refreshCards()
       setName("")
     })
   }
 
   const editFunc = () => {
+    if (isSubmitting) return
+    setIsSubmitting(true)
     api.put(`/${type}/edit`, {
       id: id,
       name: name
@@ -102,12 +110,15 @@ export default function BankHolder() {
       }
     })
     .finally(() => {
+      setIsSubmitting(false)
       refreshCards()
       setName("")
     })
   }
 
   const deleteFunc = () => {
+    if (isSubmitting) return
+    setIsSubmitting(true)
     api.delete(`/${type}/delete/${id}`)
     .then(() => {
       if(type == 'bank'){
@@ -130,24 +141,26 @@ export default function BankHolder() {
       } 
     })
     .finally(() => {
+      setIsSubmitting(false)
       refreshCards()
       setIsActiveDelete(false)
     })
   }
 
   return (
-    <div className="rounded-xl border border-slate-300 bg-slate-200 p-4 shadow-sm lg:p-8">
-      <div className="flex flex-wrap items-baseline justify-between gap-3">
-        <h1 className="font-bold text-2xl text-green-800">Bancos e Titulares</h1> 
-        <X className="text-green-700 hover:text-green-950" onClick={() => navigate('/app/cards')}/>             
+    <section className="app-panel p-5 lg:p-7">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-5">
+        <div><h1 className="app-page-title">Bancos e titulares</h1><p className="app-page-description">Cadastros usados pelos seus cartões.</p></div>
+        <button type="button" aria-label="Voltar para cartões" className="rounded-lg p-2 text-green-800 hover:bg-green-100" onClick={() => navigate('/app/cards')}><X className="size-5" /></button>
       </div>      
-      <div className="mt-6 flex min-h-36 flex-col justify-center gap-6 xl:flex-row xl:gap-8">
-        <div className="flex w-full flex-col rounded-2xl border border-slate-200 bg-slate-100 p-4 shadow-sm xl:w-[40%]">
-          <h1 className="font-bold text-2xl text-green-800 text-center">Bancos</h1> 
-          <div className="mt-4 grid w-full grid-cols-1 place-items-center gap-4 sm:grid-cols-2">
+      <div className="mt-6 grid gap-5 xl:grid-cols-2">
+        <div className="flex min-h-64 flex-col rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
+          <div className="flex items-center gap-2 border-b border-slate-200 pb-3 text-green-900"><Building2 className="size-5" /><h2 className="font-semibold">Bancos</h2><span className="ml-auto rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">{banks.length}</span></div>
+          <div className="mt-4 grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
             {
               banks.map((bank) =>(
                 <BHCard
+                  key={bank.id}
                   id={bank.id}
                   name={bank.name}
                   type="bank"
@@ -158,20 +171,22 @@ export default function BankHolder() {
                   setName={setName}
                 />              
               ))
-            }            
+            }
+            {!banks.length && <p className="col-span-full py-8 text-center text-sm text-slate-500">Nenhum banco cadastrado.</p>}
           </div>
-          <Button type="button" className="bg-green-800 self-center mt-3 text-lg font-normal hover:bg-green-900 hover:shadow-2xl" onClick={() => {
-            setIsActiveAdd(!isActiveAdd)
+          <Button type="button" size="sm" className="mt-auto self-start" onClick={() => {
+            setIsActiveAdd(true)
             setType('bank')
             setName("")
-            }}>Adicionar Banco <span className="font-semibold text-xl">+</span></Button> 
+            }}><Plus />Adicionar banco</Button>
         </div>
-        <div className="flex w-full flex-col rounded-2xl border border-slate-200 bg-slate-100 p-4 shadow-sm xl:w-[40%]">
-          <h1 className="font-bold text-2xl text-green-800 text-center">Titulares</h1> 
-          <div className="mt-4 grid w-full grid-cols-1 place-items-center gap-4 sm:grid-cols-2">
+        <div className="flex min-h-64 flex-col rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
+          <div className="flex items-center gap-2 border-b border-slate-200 pb-3 text-green-900"><UserRound className="size-5" /><h2 className="font-semibold">Titulares</h2><span className="ml-auto rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">{holders.length}</span></div>
+          <div className="mt-4 grid w-full grid-cols-1 gap-3 sm:grid-cols-2">
             {
               holders.map((holder) =>(
                 <BHCard
+                  key={holder.id}
                   id={holder.id}
                   name={holder.name}
                   type="holder"
@@ -182,28 +197,29 @@ export default function BankHolder() {
                   setName={setName}
                 />
               ))
-            }            
+            }
+            {!holders.length && <p className="col-span-full py-8 text-center text-sm text-slate-500">Nenhum titular cadastrado.</p>}
           </div>
-          <Button type="button" className="bg-green-800 self-center mt-3 text-lg font-normal hover:bg-green-900 hover:shadow-2xl" onClick={() => {
-            setIsActiveAdd(!isActiveAdd)
+          <Button type="button" size="sm" className="mt-auto self-start" onClick={() => {
+            setIsActiveAdd(true)
             setType('holder')
             setName("")
-          }}>Adicionar Titular <span className="font-semibold text-xl">+</span></Button> 
+          }}><Plus />Adicionar titular</Button>
         </div>
       </div>  
       {isActiveAdd && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="flex max-h-[calc(100dvh-2rem)] w-full max-w-xl flex-col overflow-y-auto rounded-xl bg-white p-4 shadow-2xl">
-            <X className="text-green-800 hover:text-green-950 self-end" onClick={() => setIsActiveAdd(!isActiveAdd)}/>
+          <div className="flex max-h-[calc(100dvh-2rem)] w-full max-w-md flex-col overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl">
+            <button type="button" aria-label="Fechar" className="self-end rounded-lg p-1 text-green-800 hover:bg-green-100" onClick={() => setIsActiveAdd(false)}><X className="size-5" /></button>
             <div>
-              <h1 className="font-bold text-2xl text-green-800">Adicionar</h1>
-              <form action="" className="mt-4">
-                <Input value={name} type="text" placeholder="Nome" className="capitalize" onChange={(e) => setName(e.target.value)}/>
-                <Button type="button" className="bg-green-800 self-center mt-3 text-lg font-normal hover:bg-green-900 hover:shadow-2xl" onClick={createFunc}>Salvar</Button> 
+              <h1 className="text-lg font-semibold text-green-900">Adicionar {type === "bank" ? "banco" : "titular"}</h1>
+              <form className="mt-4 space-y-3" onSubmit={(event) => { event.preventDefault(); createFunc(); }}>
+                <label htmlFor="new-bank-holder-name" className="text-sm font-medium text-green-800">Nome *</label><Input id="new-bank-holder-name" value={name} required type="text" placeholder="Nome" className="capitalize" onChange={(e) => setName(e.target.value)}/>
+                <Button type="submit" size="sm" disabled={!name.trim() || isSubmitting}>{isSubmitting ? "Salvando..." : "Salvar"}</Button>
               </form>              
             </div>
             {message && (
-              <span className={statusMessage ? "text-green-600 self-center text-xl font-semibold" : "text-red-600 self-center text-xl font-semibold"}>
+              <span role="status" className={statusMessage ? "mt-3 self-start text-sm font-medium text-green-700" : "mt-3 self-start text-sm font-medium text-red-700"}>
                   {message}
               </span>
             )}
@@ -212,44 +228,27 @@ export default function BankHolder() {
       )}
       {isActiveEdit && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="flex max-h-[calc(100dvh-2rem)] w-full max-w-xl flex-col overflow-y-auto rounded-xl bg-white p-4 shadow-2xl">
-            <X className="text-green-800 hover:text-green-950 self-end" onClick={() => setIsActiveEdit(!isActiveEdit)}/>
+          <div className="flex max-h-[calc(100dvh-2rem)] w-full max-w-md flex-col overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl">
+            <button type="button" aria-label="Fechar" className="self-end rounded-lg p-1 text-green-800 hover:bg-green-100" onClick={() => setIsActiveEdit(false)}><X className="size-5" /></button>
             <div>
-              <h1 className="font-bold text-2xl text-green-800">Editar</h1>
-              <form action="" className="mt-4">
-                <Input value={name} type="text" placeholder="Nome" className="capitalize" onChange={(e) => setName(e.target.value)}/>
-                <Button type="button" className="bg-green-800 self-center mt-3 text-lg font-normal hover:bg-green-900 hover:shadow-2xl" onClick={editFunc}>Salvar</Button> 
+              <h1 className="text-lg font-semibold text-green-900">Editar {type === "bank" ? "banco" : "titular"}</h1>
+              <form className="mt-4 space-y-3" onSubmit={(event) => { event.preventDefault(); editFunc(); }}>
+                <label htmlFor="edit-bank-holder-name" className="text-sm font-medium text-green-800">Nome *</label><Input id="edit-bank-holder-name" value={name} required type="text" placeholder="Nome" className="capitalize" onChange={(e) => setName(e.target.value)}/>
+                <Button type="submit" size="sm" disabled={!name.trim() || isSubmitting}>{isSubmitting ? "Salvando..." : "Salvar alterações"}</Button>
               </form>              
             </div>
             {message && (
-              <span className={statusMessage ? "text-green-600 self-center text-xl font-semibold" : "text-red-600 self-center text-xl font-semibold"}>
+              <span role="status" className={statusMessage ? "mt-3 self-start text-sm font-medium text-green-700" : "mt-3 self-start text-sm font-medium text-red-700"}>
                   {message}
               </span>
             )}
           </div>
         </div>
       )}
-      {isActiveDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="flex max-h-[calc(100dvh-2rem)] w-full max-w-xl flex-col overflow-y-auto rounded-xl bg-white p-4 shadow-2xl">
-            <X className="text-green-800 hover:text-green-950 self-end" onClick={() => setIsActiveDelete(!isActiveDelete)}/>
-            <div className="mt-6 self-center flex flex-col items-center">
-              <h1 className="text-center text-xl font-bold text-green-800 lg:text-2xl">Tem certeza de que deseja excluir - <span className="capitalize text-slate-700">{name}</span> ?</h1>
-              <div className="flex flex-wrap justify-center gap-4">
-                <Button type="button" className="bg-red-800 self-center mt-3 text-lg font-normal hover:bg-red-900 hover:shadow-2xl" onClick={deleteFunc}>Sim</Button> 
-                <Button type="button" className="bg-green-800 self-center mt-3 text-lg font-normal hover:bg-green-900 hover:shadow-2xl" onClick={() => setIsActiveDelete(!isActiveDelete)}>Não</Button>   
-              </div>                        
-            </div>
-            {message && (
-              <span className={statusMessage ? "text-green-600 self-center text-xl font-semibold" : "text-red-600 self-center text-xl font-semibold"}>
-                  {message}
-              </span>
-            )}
-          </div>
-        </div>
-      )}
+      <AlertDialog open={isActiveDelete} onOpenChange={setIsActiveDelete}><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Excluir {type === "bank" ? "banco" : "titular"}?</AlertDialogTitle><AlertDialogDescription>Esta ação removerá {name} permanentemente.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction className="bg-red-700 hover:bg-red-800" disabled={isSubmitting} onClick={deleteFunc}>{isSubmitting ? "Excluindo..." : "Excluir"}</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>
+      <Feedback message={message} error={statusMessage === false} />
 
       
-    </div>
+    </section>
   );
 }

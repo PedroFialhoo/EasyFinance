@@ -31,8 +31,20 @@ public class UserService {
     @Autowired
     private BillInstallmentRepository billInstallmentRepository;
 
+    @Autowired
+    private BillService billService;
+
 
     public Boolean createUser(UserDto userDto){
+        if (userDto == null || userDto.getEmail() == null || !userDto.getEmail().contains("@")) {
+            throw new IllegalArgumentException("Informe um e-mail válido");
+        }
+        if (userDto.getPassword() == null || userDto.getPassword().isBlank()) {
+            throw new IllegalArgumentException("Informe uma senha");
+        }
+        if (userRepository.findByEmail(userDto.getEmail()).isPresent()) {
+            throw new IllegalArgumentException("Este e-mail já está cadastrado");
+        }
         User user = new User();
         user.setEmail(userDto.getEmail());
         user.setPassword(userDto.getPassword());
@@ -100,6 +112,7 @@ public class UserService {
         dto.setRevenue(user.getRevenue());
         LocalDate inicio = LocalDate.now().withDayOfMonth(1);
         LocalDate fim = inicio.plusMonths(1);
+        billService.ensureRecurringOccurrencesThrough(user.getId(), fim);
 
         List<BillInstallment> installments = billInstallmentRepository.findByDueDateBetween(inicio, fim);
         Double totalExpenses = 0.0;
@@ -117,6 +130,7 @@ public class UserService {
         LocalDate currentMonth = LocalDate.now().withDayOfMonth(1);
         LocalDate start = currentMonth.minusMonths(5);
         LocalDate end = currentMonth.plusMonths(1);
+        billService.ensureRecurringOccurrencesThrough(user.getId(), end);
         List<BillInstallment> installments = billInstallmentRepository
                 .findByUserAndDueDateRange(user.getId(), start, end);
 

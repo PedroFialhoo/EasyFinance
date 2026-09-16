@@ -44,7 +44,13 @@ public class CardService {
     @Autowired
     private BillInstallmentRepository billInstallmentRepository;
 
+    @Autowired
+    private BalanceService balanceService;
+
     public boolean create(CardDto dto){
+        if (dto == null || dto.getDueDay() == null || dto.getDueDay() < 1 || dto.getDueDay() > 31) {
+            return false;
+        }
         Card card = new Card();
 
         Optional<Bank> optBank = bankRepository.findById(dto.getBank().getId());
@@ -61,6 +67,7 @@ public class CardService {
         
         card.setUser(user);
         card.setNumber(dto.getNumber());
+        card.setDueDay(dto.getDueDay());
         card.setActive(true);
 
         cardRepository.save(card);
@@ -85,6 +92,7 @@ public class CardService {
                 cardDto.setHolder(holderDto);
                 cardDto.setBank(bankDto);
                 cardDto.setNumber(card.getNumber());
+                cardDto.setDueDay(card.getDueDay());
                 cardDto.setId(card.getId());
                 cardDto.setActive(card.getActive());
                 cardsDto.add(cardDto);
@@ -108,6 +116,7 @@ public class CardService {
             cardDto.setHolder(holderDto);
             cardDto.setBank(bankDto);
             cardDto.setNumber(card.getNumber());
+            cardDto.setDueDay(card.getDueDay());
             cardDto.setId(card.getId());
             cardDto.setActive(card.getActive());
             return cardDto;
@@ -117,6 +126,9 @@ public class CardService {
     }
 
     public boolean edit(CardDto dto){
+        if (dto == null || dto.getDueDay() == null || dto.getDueDay() < 1 || dto.getDueDay() > 31) {
+            return false;
+        }
         Optional<Card> optCard = cardRepository.findById(dto.getId());
         if(optCard.isEmpty()){
             return false;
@@ -133,6 +145,7 @@ public class CardService {
         card.setHolder(optHolder.get());
                 
         card.setNumber(dto.getNumber());
+        card.setDueDay(dto.getDueDay());
         card.setActive(dto.getActive());
 
         cardRepository.save(card);
@@ -175,6 +188,7 @@ public class CardService {
                 cardDto.setHolder(holderDto);
                 cardDto.setBank(bankDto);
                 cardDto.setNumber(card.getNumber());
+                cardDto.setDueDay(card.getDueDay());
                 cardDto.setId(card.getId());
                 cardDto.setActive(card.getActive());
                 cardsDto.add(cardDto);
@@ -205,6 +219,7 @@ public class CardService {
                 if (installmentMonth.equals(currentMonth) && installment.getPaymentDate() == null){
                     installment.setPaymentDate(LocalDate.now());
                     billInstallmentRepository.save(installment);
+                    balanceService.recordPaidInstallment(installment);
                     paidSomething = true;
                 }
             }

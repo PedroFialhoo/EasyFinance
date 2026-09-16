@@ -36,6 +36,7 @@ class ReminderServiceTest {
     @Mock private NotificationPreferenceRepository preferenceRepository;
     @Mock private InstallmentNotificationRepository notificationRepository;
     @Mock private UserRepository userRepository;
+    @Mock private BillService billService;
     @InjectMocks private ReminderService reminderService;
 
     @AfterEach

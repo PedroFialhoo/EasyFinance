@@ -24,12 +24,15 @@ public class UserController {
 
     @PostMapping("/create")
     public ResponseEntity<?> createUser(@RequestBody UserDto userDto) {
-        boolean success = userService.createUser(userDto);
-        if(success){
-            return ResponseEntity.ok("User create!");
+        try {
+            boolean success = userService.createUser(userDto);
+            if(success){
+                return ResponseEntity.ok("User create!");
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Não foi possível criar a conta");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
-        
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User not create!");
     }
     
     @PutMapping("/update")

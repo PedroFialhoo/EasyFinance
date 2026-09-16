@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { api } from "@/services/api";
-import { X } from "lucide-react";
+import { Plus, Tags, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import CategoryCard from "./CategoryCard";
@@ -18,11 +18,23 @@ export default function Category(){
     const [statusMessage, setStatusMessage] = useState(null)
     const [name, setName] = useState("")
     const [id, setId] = useState(null)
+    const [loading, setLoading] = useState(true)
+    const [loadError, setLoadError] = useState("")
+
+    const loadCategories = () => {
+        setLoading(true)
+        setLoadError("")
+        api.get("/category/getAll")
+          .then(response => setCategories(response.data))
+          .catch(() => setLoadError("Não foi possível carregar as categorias."))
+          .finally(() => setLoading(false))
+    }
 
     useEffect(() => {
           api.get("/category/getAll")
             .then(response => setCategories(response.data))
-            .catch(err => console.log("Erro:", err));
+            .catch(() => setLoadError("Não foi possível carregar as categorias."))
+            .finally(() => setLoading(false));
         }, [reload]);
 
     useEffect(() => {
@@ -90,15 +102,18 @@ export default function Category(){
   }
 
     return(
-        <div className="rounded-xl border border-slate-300 bg-slate-200 p-4 shadow-sm lg:p-8">
-            <div className="flex flex-wrap items-baseline justify-between gap-3">
-                <h1 className="font-bold text-2xl text-green-800">Categorias</h1> 
-                <X className="text-green-700 hover:text-green-950" onClick={() => navigate('/app/bills')}/>             
+        <section className="app-panel p-5 lg:p-7">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-5">
+                <div><h1 className="app-page-title">Categorias</h1><p className="app-page-description">Organize suas contas em grupos claros.</p></div>
+                <button type="button" aria-label="Voltar para contas" className="rounded-lg p-2 text-green-800 hover:bg-green-100" onClick={() => navigate('/app/bills')}><X className="size-5" /></button>
             </div>      
-            <div className="mt-4 grid w-full grid-cols-2 place-items-center gap-4 lg:grid-cols-3 xl:grid-cols-5">
+            <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
+                <div className="flex items-center gap-2 border-b border-slate-200 pb-3 text-green-900"><Tags className="size-5" /><h2 className="font-semibold">Suas categorias</h2><span className="ml-auto rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">{categories.length}</span></div>
+                <div className="mt-4 grid w-full grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {
                   categories.map((category) =>(
                     <CategoryCard
+                        key={category.id}
                         id={category.id}
                         name={category.name}
                         setId={setId}
@@ -107,26 +122,29 @@ export default function Category(){
                         setIsActiveDelete={setIsActiveDelete}
                     />              
                   ))
-                }   
-                <Button type="button" className="bg-green-800 self-center mt-3 text-lg font-normal hover:bg-green-900 hover:shadow-2xl" onClick={() => {
-                    setIsActiveAdd(!isActiveAdd)
+                }
+                {loading && <p role="status" className="col-span-full py-8 text-center text-sm text-slate-500">Carregando categorias...</p>}
+                {!loading && loadError && <p role="alert" className="col-span-full py-8 text-center text-sm text-red-700">{loadError} <button type="button" className="font-semibold underline" onClick={loadCategories}>Tentar novamente</button></p>}
+                {!loading && !loadError && !categories.length && <p className="col-span-full py-8 text-center text-sm text-slate-500">Nenhuma categoria cadastrada.</p>}
+                </div>
+                <Button type="button" size="sm" className="mt-4" onClick={() => {
+                    setIsActiveAdd(true)
                     setName("")
-                    }}>Adicionar Categoria <span className="font-semibold text-xl">+</span>
-                </Button> 
-            </div>    
+                    }}><Plus />Adicionar categoria</Button>
+            </div>
             {isActiveAdd && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                <div className="flex max-h-[calc(100dvh-2rem)] w-full max-w-xl flex-col overflow-y-auto rounded-xl bg-white p-4 shadow-2xl">
-                    <X className="text-green-800 hover:text-green-950 self-end" onClick={() => setIsActiveAdd(!isActiveAdd)}/>
+                <div className="flex max-h-[calc(100dvh-2rem)] w-full max-w-md flex-col overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl">
+                    <button type="button" aria-label="Fechar" className="self-end rounded-lg p-1 text-green-800 hover:bg-green-100" onClick={() => setIsActiveAdd(false)}><X className="size-5" /></button>
                     <div>
-                    <h1 className="font-bold text-2xl text-green-800">Adicionar</h1>
-                    <form action="" className="mt-4">
+                    <h1 className="text-lg font-semibold text-green-900">Adicionar categoria</h1>
+                    <form className="mt-4 space-y-3" onSubmit={(event) => { event.preventDefault(); createFunc(); }}>
                         <Input value={name} type="text" placeholder="Nome" className="capitalize" onChange={(e) => setName(e.target.value)}/>
-                        <Button type="button" className="bg-green-800 self-center mt-3 text-lg font-normal hover:bg-green-900 hover:shadow-2xl" onClick={createFunc}>Salvar</Button> 
+                        <Button type="submit" size="sm" disabled={!name.trim()}>Salvar</Button>
                     </form>              
                     </div>
                     {message && (
-                    <span className={statusMessage ? "text-green-600 self-center text-xl font-semibold" : "text-red-600 self-center text-xl font-semibold"}>
+                    <span role="status" className={statusMessage ? "mt-3 self-start text-sm font-medium text-green-700" : "mt-3 self-start text-sm font-medium text-red-700"}>
                         {message}
                     </span>
                     )}
@@ -135,17 +153,17 @@ export default function Category(){
             )}
             {isActiveEdit && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                <div className="flex max-h-[calc(100dvh-2rem)] w-full max-w-xl flex-col overflow-y-auto rounded-xl bg-white p-4 shadow-2xl">
-                    <X className="text-green-800 hover:text-green-950 self-end" onClick={() => setIsActiveEdit(!isActiveEdit)}/>
+                <div className="flex max-h-[calc(100dvh-2rem)] w-full max-w-md flex-col overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl">
+                    <button type="button" aria-label="Fechar" className="self-end rounded-lg p-1 text-green-800 hover:bg-green-100" onClick={() => setIsActiveEdit(false)}><X className="size-5" /></button>
                     <div>
-                    <h1 className="font-bold text-2xl text-green-800">Editar</h1>
-                    <form action="" className="mt-4">
+                    <h1 className="text-lg font-semibold text-green-900">Editar categoria</h1>
+                    <form className="mt-4 space-y-3" onSubmit={(event) => { event.preventDefault(); editFunc(); }}>
                         <Input value={name} type="text" placeholder="Nome" className="capitalize" onChange={(e) => setName(e.target.value)}/>
-                        <Button type="button" className="bg-green-800 self-center mt-3 text-lg font-normal hover:bg-green-900 hover:shadow-2xl" onClick={editFunc}>Salvar</Button> 
+                        <Button type="submit" size="sm" disabled={!name.trim()}>Salvar alterações</Button>
                     </form>              
                     </div>
                     {message && (
-                    <span className={statusMessage ? "text-green-600 self-center text-xl font-semibold" : "text-red-600 self-center text-xl font-semibold"}>
+                    <span role="status" className={statusMessage ? "mt-3 self-start text-sm font-medium text-green-700" : "mt-3 self-start text-sm font-medium text-red-700"}>
                         {message}
                     </span>
                     )}
@@ -154,23 +172,24 @@ export default function Category(){
             )}
             {isActiveDelete && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                <div className="flex max-h-[calc(100dvh-2rem)] w-full max-w-xl flex-col overflow-y-auto rounded-xl bg-white p-4 shadow-2xl">
-                    <X className="text-green-800 hover:text-green-950 self-end" onClick={() => setIsActiveDelete(!isActiveDelete)}/>
-                    <div className="mt-6 self-center flex flex-col items-center">
-                    <h1 className="text-center text-xl font-bold text-green-800 lg:text-2xl">Tem certeza de que deseja excluir - <span className="capitalize text-slate-700">{name}</span> ?</h1>
-                    <div className="flex flex-wrap justify-center gap-4">
-                        <Button type="button" className="bg-red-800 self-center mt-3 text-lg font-normal hover:bg-red-900 hover:shadow-2xl" onClick={deleteFunc}>Sim</Button> 
-                        <Button type="button" className="bg-green-800 self-center mt-3 text-lg font-normal hover:bg-green-900 hover:shadow-2xl" onClick={() => setIsActiveDelete(!isActiveDelete)}>Não</Button>   
+                <div className="flex max-h-[calc(100dvh-2rem)] w-full max-w-md flex-col overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl">
+                    <button type="button" aria-label="Fechar" className="self-end rounded-lg p-1 text-green-800 hover:bg-green-100" onClick={() => setIsActiveDelete(false)}><X className="size-5" /></button>
+                    <div className="mt-3 flex flex-col">
+                    <h1 className="text-lg font-semibold text-slate-900">Excluir categoria?</h1>
+                    <p className="mt-1 text-sm text-slate-600">Esta ação removerá <span className="font-semibold capitalize text-slate-800">{name}</span> permanentemente.</p>
+                    <div className="mt-5 flex justify-end gap-2">
+                        <Button type="button" variant="outline" size="sm" onClick={() => setIsActiveDelete(false)}>Cancelar</Button>
+                        <Button type="button" variant="destructive" size="sm" onClick={deleteFunc}>Excluir</Button>
                     </div>                        
                     </div>
                     {message && (
-                    <span className={statusMessage ? "text-green-600 self-center text-xl font-semibold" : "text-red-600 self-center text-xl font-semibold"}>
+                    <span role="status" className={statusMessage ? "mt-3 self-start text-sm font-medium text-green-700" : "mt-3 self-start text-sm font-medium text-red-700"}>
                         {message}
                     </span>
                     )}
                 </div>
                 </div>
             )} 
-        </div>
+        </section>
     )
 }

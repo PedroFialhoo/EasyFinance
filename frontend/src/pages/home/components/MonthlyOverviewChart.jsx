@@ -19,7 +19,8 @@ export default function MonthlyOverviewChart({ data, isLoading }) {
             {isLoading ? (
                 <div className="mt-10 h-56 animate-pulse rounded-xl bg-slate-200" />
             ) : (
-                <div className="mt-6 h-56">
+                <>
+                <div className="mt-6 h-56" aria-hidden="true">
                     <ResponsiveContainer width="100%" height="100%">
                         <ComposedChart data={data} margin={{ top: 8, right: 4, left: -18, bottom: 0 }}>
                             <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
@@ -36,6 +37,7 @@ export default function MonthlyOverviewChart({ data, isLoading }) {
                         </ComposedChart>
                     </ResponsiveContainer>
                 </div>
+                </>
             )}
         </article>
     );

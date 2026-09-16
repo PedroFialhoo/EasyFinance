@@ -9,6 +9,8 @@ import BankHolder from "@/pages/cards/components/BankHolder";
 import Category from "@/pages/bills/components/Category";
 import Register from "@/pages/register/Register";
 import Calendar from "@/pages/calendar/Calendar";
+import Balance from "@/pages/balance/Balance";
+import ProtectedLayout from "@/layouts/ProtectedLayout";
 
 const Router = createHashRouter([
   {
@@ -21,8 +23,10 @@ const Router = createHashRouter([
   },
   {
     path: "/app",
-    element: <AppLayout />,
-    children: [
+    element: <ProtectedLayout />,
+    children: [{
+      element: <AppLayout />,
+      children: [
       {
         path: "home",
         element: <Home />,
@@ -52,10 +56,15 @@ const Router = createHashRouter([
         element: <Calendar />,
       },
       {
+        path: "balance",
+        element: <Balance />,
+      },
+      {
         path: "settings",
         element: <Settings />,
       },
-    ],
+      ],
+    }],
   },
 ]);
 

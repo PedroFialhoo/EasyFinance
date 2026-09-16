@@ -6,9 +6,18 @@ import { api } from "@/services/api";
 const currency = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
 
 function description(reminder) {
-  if (reminder.status === "OVERDUE") return `Atrasada ha ${Math.abs(reminder.daysUntilDue)} dia(s)`;
+  if (reminder.status === "OVERDUE") {
+    const days = Math.abs(reminder.daysUntilDue);
+    return `Atrasada há ${days} ${days === 1 ? "dia" : "dias"}`;
+  }
   if (reminder.status === "TODAY") return "Vence hoje";
-  return `Vence em ${reminder.daysUntilDue} dia(s)`;
+  if (reminder.daysUntilDue === 1) return "Vence amanhã";
+  return `Vence em ${reminder.daysUntilDue} dias`;
+}
+
+function billPath(reminder) {
+  const [year, month] = reminder.dueDate.split("-");
+  return `/app/bills?year=${year}&month=${Number(month)}&billId=${reminder.billId}`;
 }
 
 export default function ReminderBell() {
@@ -16,18 +25,24 @@ export default function ReminderBell() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
 
+  const refreshSummary = () => api.get("/reminders/summary").then(response => setSummary(response.data)).catch(() => {});
+
   useEffect(() => {
-    const load = () => api.get("/reminders/summary").then(response => setSummary(response.data)).catch(() => {});
+    const load = () => refreshSummary();
     load();
     const interval = window.setInterval(load, 5 * 60 * 1000);
-    return () => window.clearInterval(interval);
+    window.addEventListener("reminders-updated", load);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("reminders-updated", load);
+    };
   }, []);
 
   const reminders = [...summary.overdue, ...summary.dueToday, ...summary.upcoming].slice(0, 6);
 
   return (
     <div className="relative">
-      <button type="button" onClick={() => setOpen(current => !current)} aria-label="Abrir lembretes" className="relative rounded-lg p-2 text-white transition-colors hover:bg-green-900 hover:text-yellow-500">
+      <button type="button" onClick={() => { refreshSummary(); setOpen(current => !current); }} aria-label="Abrir lembretes" className="relative rounded-lg p-2 text-white transition-colors hover:bg-green-900 hover:text-yellow-500">
         <Bell className="size-6" />
         {summary.pendingCount > 0 && <span className="absolute -right-1 -top-1 flex size-5 items-center justify-center rounded-full bg-yellow-400 text-xs font-bold text-green-950">{summary.pendingCount > 9 ? "9+" : summary.pendingCount}</span>}
       </button>
@@ -40,7 +55,7 @@ export default function ReminderBell() {
           {reminders.length === 0 ? <p className="px-1 py-4 text-sm text-slate-500">Nenhuma conta pendente nos próximos 7 dias.</p> : (
             <div className="space-y-1">
               {reminders.map(reminder => (
-                <button key={reminder.installmentId} type="button" onClick={() => { setOpen(false); navigate("/app/bills"); }} className="flex w-full items-start gap-2 rounded-lg p-2 text-left hover:bg-slate-100">
+                <button key={reminder.installmentId} type="button" onClick={() => { setOpen(false); navigate(billPath(reminder)); }} className="flex w-full items-start gap-2 rounded-lg p-2 text-left hover:bg-slate-100">
                   <CircleAlert className={reminder.status === "OVERDUE" ? "mt-0.5 size-4 shrink-0 text-red-600" : "mt-0.5 size-4 shrink-0 text-amber-600"} />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-medium">{reminder.name}</span>

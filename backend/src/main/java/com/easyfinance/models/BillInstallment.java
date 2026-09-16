@@ -23,6 +23,7 @@ public class BillInstallment {
     @JoinColumn(name = "bill_id")
     private Bill bill;
     private int installmentNumber; 
+    private String balanceReference;
     private double value;
     @Column(columnDefinition = "TEXT")
     private LocalDate dueDate;

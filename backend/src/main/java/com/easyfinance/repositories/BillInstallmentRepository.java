@@ -32,6 +32,16 @@ public interface BillInstallmentRepository extends JpaRepository<BillInstallment
 
     List<BillInstallment> findByBillId(int billId);
 
+    boolean existsByBillIdAndDueDate(int billId, LocalDate dueDate);
+
+    @Query("""
+        SELECT bi
+        FROM BillInstallment bi
+        WHERE bi.bill.user.id = :userId
+        AND bi.paymentDate IS NOT NULL
+        """)
+    List<BillInstallment> findPaidByUser(@Param("userId") int userId);
+
     @Query("""
         SELECT bi
         FROM BillInstallment bi
@@ -63,6 +73,16 @@ public interface BillInstallmentRepository extends JpaRepository<BillInstallment
     @Modifying
     @Transactional
     void deleteAllByBillId(int billId);
+
+    @Modifying
+    @Transactional
+    @Query("""
+        DELETE FROM BillInstallment bi
+        WHERE bi.bill.id = :billId
+        AND bi.paymentDate IS NULL
+        AND bi.dueDate > :date
+    """)
+    void deletePendingByBillIdAfter(@Param("billId") int billId, @Param("date") LocalDate date);
 
     BillInstallment findByBillIdAndInstallmentNumber(int billId, int installmentNumber);
 

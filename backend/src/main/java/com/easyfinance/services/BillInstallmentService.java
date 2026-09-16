@@ -1,6 +1,7 @@
 package com.easyfinance.services;
 
 import java.time.LocalDate;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -14,18 +15,18 @@ public class BillInstallmentService {
     @Autowired
     private BillInstallmentRepository billInstallmentRepository;
 
-    public boolean create(Bill bill, int installmentNumber, double value, LocalDate dueDate, LocalDate paymentDate){
+    public BillInstallment create(Bill bill, int installmentNumber, double value, LocalDate dueDate, LocalDate paymentDate){
         BillInstallment billInstallment = new BillInstallment();
         billInstallment.setBill(bill);
         billInstallment.setInstallmentNumber(installmentNumber);
+        billInstallment.setBalanceReference(UUID.randomUUID().toString());
         billInstallment.setValue(value);
         billInstallment.setDueDate(dueDate);
         if(paymentDate != null){
            billInstallment.setPaymentDate(paymentDate); 
         }
 
-        billInstallmentRepository.save(billInstallment);
-        return true;
+        return billInstallmentRepository.save(billInstallment);
     }
 
     public boolean edit(Bill bill, int installmentNumber, double value, LocalDate dueDate, LocalDate paymentDate){
