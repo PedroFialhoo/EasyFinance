@@ -21,4 +21,6 @@ public class BalanceAccount {
 
     private double balance;
     private String lastRevenueMonth;
+    private Double monthlyRevenue;
+    private Integer revenuePaymentDay;
 }

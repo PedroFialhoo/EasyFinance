@@ -30,6 +30,5 @@ public class User {
     private List<Bill> bills;
     @OneToMany(mappedBy = "user")
     private List<Card> cards;
-    private Double revenue;
     private Boolean rememberMe = false;
 }

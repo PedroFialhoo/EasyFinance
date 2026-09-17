@@ -1,29 +1,38 @@
 # EasyFinance
 
-Aplicação desktop para controle financeiro pessoal, construída com React, Electron, Spring Boot e SQLite.
+Aplicativo desktop para organizar a vida financeira pessoal. O EasyFinance reúne receitas, contas, cartões, saldos e lembretes em uma única aplicação, com os dados armazenados localmente no computador.
 
-## Funcionalidades
+## Recursos
 
-- Cadastro, login, logout e recuperação da sessão do usuário.
-- Atualização de perfil, receita mensal, e-mail, nome de usuário e senha.
-- Resumo de receita no painel inicial.
-- Cadastro, edição, exclusão e consulta de contas/faturas, incluindo pagamento e filtro mensal.
-- Cadastro, edição e exclusão de categorias.
-- Cadastro, edição, exclusão, consulta e pagamento de cartões; verificação de faturas mensais.
-- Cadastro, edição e exclusão de bancos e titulares de cartões.
+- Painel financeiro com resumo mensal, gráficos por categoria e evolução das receitas.
+- Controle de receitas, contas e faturas, com filtros por mês e registro de pagamento.
+- Cadastro de categorias para organizar despesas.
+- Gestão de cartões de crédito, bancos e titulares, incluindo o acompanhamento das faturas mensais.
+- Área de saldo para acompanhar contas fixas e movimentações.
+- Calendário com lembretes de vencimento e notificações no desktop.
+- Exportação de relatórios de contas em PDF e anexação de arquivos às contas.
+- Cadastro, login e gerenciamento de perfil do usuário.
 
 ## Tecnologias
 
-- Frontend: React 19, Vite, Tailwind CSS e Electron.
-- Backend: Java 21, Spring Boot 3.4, Spring Data JPA e SQLite.
+- Interface: React 19, Vite, Tailwind CSS e Electron.
+- API: Java 21, Spring Boot 3.4 e Spring Data JPA.
+- Banco de dados: SQLite.
 
-## Pré-requisitos
+## Instalação
+
+1. Baixe `EasyFinance.exe` na página de lançamentos.
+2. Execute o instalador e conclua as etapas exibidas.
+3. Abra o EasyFinance pelo atalho criado no menu Iniciar ou na área de trabalho.
+
+O aplicativo inclui os componentes necessários para executar a API localmente. Os dados são salvos em `${user.home}/easyfinance.db` e permanecem no computador mesmo após atualizar o aplicativo.
+
+## Desenvolvimento
+
+### Pré-requisitos
 
 - Node.js e npm.
-- JDK 21, disponível no `PATH` para executar o backend.
-- Para gerar instaladores, um JRE compatível com o sistema de destino. Defina `EASYFINANCE_JRE_PATH` para seu diretório; sem essa variável, o build usa `C:/Java/jdk-21.0.9+10/jre`.
-
-## Rodar Em Desenvolvimento
+- JDK 21 no `PATH`.
 
 Instale as dependências do frontend:
 
@@ -39,54 +48,35 @@ cd /d backend
 mvnw.cmd spring-boot:run
 ```
 
-Em outro terminal, inicie o Vite:
+Em outro terminal, inicie o frontend:
 
 ```bat
 cd /d frontend
 npm run dev
 ```
 
-Abra `http://localhost:5173`. A API é exposta em `http://localhost:8080`, e os dados são persistidos em `${user.home}/easyfinance.db`.
+Abra `http://localhost:5173`. A API estará disponível em `http://localhost:8080`.
 
-## Rodar Pelo Electron
-
-Em um terminal, mantenha o Vite em execução:
-
-```bat
-cd /d frontend
-npm run dev
-```
-
-Em outro terminal, abra o aplicativo Electron:
+Para executar pelo Electron durante o desenvolvimento, mantenha o Vite em execução e use outro terminal:
 
 ```bat
 cd /d frontend
 npm run electron
 ```
 
-O comando gera e copia automaticamente o JAR do backend para o Electron.
+## Gerar Distribuição
 
-## Gerar Uma Nova Versão
-
-1. Instale as dependências com `npm ci` em `frontend/`.
-2. Defina o JRE a ser incluído no instalador, caso ele não esteja no caminho padrão.
+Para criar o instalador Windows, defina um JRE 21 compatível. Se `EASYFINANCE_JRE_PATH` não for informado, o build usa `C:/Java/jdk-21.0.9+10/jre`.
 
 ```bat
 set "EASYFINANCE_JRE_PATH=C:\caminho\para\jre"
-```
-
-3. Gere o pacote completo:
-
-```bat
 cd /d frontend
 npm run build
 ```
 
-O instalador NSIS e os demais artefatos são criados em `frontend/release/`. O comando `npm run build` gera o JAR do backend, o frontend e o instalador Electron.
+O comando gera o JAR da API, compila a interface e cria o instalador `EasyFinance.exe` em `frontend/release/`.
 
-## Gerar Instaladores Linux
-
-Execute o build em uma máquina Linux x64. O JRE definido em `EASYFINANCE_JRE_PATH` também deve ser Linux x64 e compatível com Java 21; um JRE do Windows não funciona no pacote Linux.
+Para Linux x64, execute o build em uma máquina Linux usando um JRE 21 para Linux x64:
 
 ```bash
 cd frontend
@@ -95,7 +85,7 @@ export EASYFINANCE_JRE_PATH=/caminho/para/jre-21
 npm run build:linux
 ```
 
-Os arquivos `AppImage` e `.deb` são gerados em `frontend/release/`.
+O arquivo AppImage é criado em `frontend/release/`.
 
 ## Verificação
 

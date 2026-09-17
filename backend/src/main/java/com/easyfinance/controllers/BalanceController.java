@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.easyfinance.dtos.BalanceAdjustmentDto;
 import com.easyfinance.dtos.BalanceAmountDto;
 import com.easyfinance.dtos.BalanceDto;
+import com.easyfinance.dtos.BalanceRevenueDto;
 import com.easyfinance.services.BalanceService;
 
 @RestController
@@ -47,6 +48,15 @@ public class BalanceController {
     public ResponseEntity<?> addAmount(@RequestBody BalanceAmountDto dto) {
         try {
             return ResponseEntity.ok(balanceService.addAmount(dto));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PutMapping("/revenue")
+    public ResponseEntity<?> updateRevenue(@RequestBody BalanceRevenueDto dto) {
+        try {
+            return ResponseEntity.ok(balanceService.updateRevenue(dto));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

@@ -20,6 +20,7 @@ import com.easyfinance.dtos.UserDto;
 import com.easyfinance.models.BillInstallment;
 import com.easyfinance.models.User;
 import com.easyfinance.models.UserSession;
+import com.easyfinance.repositories.BalanceAccountRepository;
 import com.easyfinance.repositories.BillInstallmentRepository;
 import com.easyfinance.repositories.UserRepository;
 
@@ -30,6 +31,9 @@ public class UserService {
     
     @Autowired
     private BillInstallmentRepository billInstallmentRepository;
+
+    @Autowired
+    private BalanceAccountRepository balanceAccountRepository;
 
     @Autowired
     private BillService billService;
@@ -62,10 +66,6 @@ public class UserService {
         if (userDto.getEmail() == null || !userDto.getEmail().contains("@")) {
             throw new IllegalArgumentException("E-mail invalido");
         }
-        if (userDto.getRevenue() == null || !Double.isFinite(userDto.getRevenue()) || userDto.getRevenue() < 0) {
-            throw new IllegalArgumentException("A receita deve ser um valor maior ou igual a zero");
-        }
-
         User user = getActiveUser();
         Optional<User> existingUser = userRepository.findByEmail(userDto.getEmail());
         if (existingUser.isPresent() && existingUser.get().getId() != user.getId()) {
@@ -74,8 +74,6 @@ public class UserService {
 
         user.setEmail(userDto.getEmail());
         user.setUsername(userDto.getUsername());
-        user.setRevenue(userDto.getRevenue());
-
         userRepository.save(user);
         return true;
     }
@@ -109,9 +107,9 @@ public class UserService {
         User user = optUser.get();
 
         RevenueDto dto = new RevenueDto();
-        dto.setRevenue(user.getRevenue());
+        dto.setRevenue(monthlyRevenueFor(user.getId()));
         LocalDate inicio = LocalDate.now().withDayOfMonth(1);
-        LocalDate fim = inicio.plusMonths(1);
+        LocalDate fim = inicio.plusMonths(1).minusDays(1);
         billService.ensureRecurringOccurrencesThrough(user.getId(), fim);
 
         List<BillInstallment> installments = billInstallmentRepository.findByDueDateBetween(inicio, fim);
@@ -154,7 +152,7 @@ public class UserService {
         }
 
         DashboardDto dto = new DashboardDto();
-        double revenue = user.getRevenue() == null ? 0.0 : user.getRevenue();
+        double revenue = monthlyRevenueFor(user.getId());
         for (Map.Entry<YearMonth, Double> entry : expensesByMonth.entrySet()) {
             dto.getMonthlySummary().add(new MonthlySummaryDto(entry.getKey().toString(), revenue, entry.getValue()));
         }
@@ -179,7 +177,6 @@ public class UserService {
         User user = optUser.get();
         UserDto dto = new UserDto();
         dto.setEmail(user.getEmail());
-        dto.setRevenue(user.getRevenue());
         dto.setUsername(user.getUsername());
         return dto;
     }
@@ -232,5 +229,11 @@ public class UserService {
         }
         return userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Conta ativa nao encontrada"));
+    }
+
+    private double monthlyRevenueFor(int userId) {
+        return balanceAccountRepository.findByUserId(userId)
+                .map(account -> account.getMonthlyRevenue() == null ? 0.0 : account.getMonthlyRevenue())
+                .orElse(0.0);
     }
 }

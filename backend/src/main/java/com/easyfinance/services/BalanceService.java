@@ -11,6 +11,7 @@ import com.easyfinance.dtos.BalanceAdjustmentDto;
 import com.easyfinance.dtos.BalanceAmountDto;
 import com.easyfinance.dtos.BalanceDto;
 import com.easyfinance.dtos.BalanceEntryDto;
+import com.easyfinance.dtos.BalanceRevenueDto;
 import com.easyfinance.models.BalanceAccount;
 import com.easyfinance.models.BalanceEntry;
 import com.easyfinance.models.BalanceEntryType;
@@ -103,6 +104,29 @@ public class BalanceService {
     }
 
     @Transactional
+    public BalanceDto updateRevenue(BalanceRevenueDto dto) {
+        if (dto == null || !Double.isFinite(dto.getRevenue()) || dto.getRevenue() < 0) {
+            throw new IllegalArgumentException("Informe uma receita maior ou igual a zero");
+        }
+        if (dto.getPaymentDay() < 1 || dto.getPaymentDay() > 31) {
+            throw new IllegalArgumentException("Informe um dia de pagamento entre 1 e 31");
+        }
+
+        User user = getActiveUser();
+        BalanceAccount account = balanceAccountRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Informe o saldo inicial primeiro"));
+        boolean wasUnconfigured = account.getMonthlyRevenue() == null || account.getRevenuePaymentDay() == null;
+        account.setMonthlyRevenue(dto.getRevenue());
+        account.setRevenuePaymentDay(dto.getPaymentDay());
+        if (wasUnconfigured && !revenueDateFor(YearMonth.now(), dto.getPaymentDay()).isBefore(LocalDate.now())) {
+            account.setLastRevenueMonth(YearMonth.now().minusMonths(1).toString());
+        }
+        balanceAccountRepository.save(account);
+        synchronizeMonthlyRevenue(account);
+        return toDto(account, user.getId());
+    }
+
+    @Transactional
     public void recordPaidInstallment(BillInstallment installment) {
         if (installment == null || installment.getBill() == null || installment.getPaymentDate() == null) {
             return;
@@ -143,18 +167,29 @@ public class BalanceService {
     }
 
     private void synchronizeMonthlyRevenue(BalanceAccount account) {
+        if (account.getMonthlyRevenue() == null || account.getRevenuePaymentDay() == null) {
+            return;
+        }
         YearMonth currentMonth = YearMonth.now();
         YearMonth lastMonth = YearMonth.parse(account.getLastRevenueMonth());
         while (lastMonth.isBefore(currentMonth)) {
-            lastMonth = lastMonth.plusMonths(1);
-            String referenceKey = "MONTHLY_REVENUE:" + account.getUser().getId() + ":" + lastMonth;
-            if (!balanceEntryRepository.existsByReferenceKey(referenceKey)) {
-                double revenue = account.getUser().getRevenue() == null ? 0.0 : account.getUser().getRevenue();
-                addEntry(account, BalanceEntryType.MONTHLY_REVENUE, revenue, "Receita mensal", lastMonth.atDay(1), referenceKey);
+            YearMonth nextMonth = lastMonth.plusMonths(1);
+            LocalDate paymentDate = revenueDateFor(nextMonth, account.getRevenuePaymentDay());
+            if (paymentDate.isAfter(LocalDate.now())) {
+                break;
             }
+            String referenceKey = "MONTHLY_REVENUE:" + account.getUser().getId() + ":" + nextMonth;
+            if (!balanceEntryRepository.existsByReferenceKey(referenceKey)) {
+                addEntry(account, BalanceEntryType.MONTHLY_REVENUE, account.getMonthlyRevenue(), "Receita mensal", paymentDate, referenceKey);
+            }
+            lastMonth = nextMonth;
         }
-        account.setLastRevenueMonth(currentMonth.toString());
+        account.setLastRevenueMonth(lastMonth.toString());
         balanceAccountRepository.save(account);
+    }
+
+    static LocalDate revenueDateFor(YearMonth month, int paymentDay) {
+        return month.atDay(Math.min(paymentDay, month.lengthOfMonth()));
     }
 
     private void reconcilePaidInstallments(BalanceAccount account) {
@@ -208,6 +243,8 @@ public class BalanceService {
         dto.setInitialized(true);
         dto.setBalance(account.getBalance());
         dto.setLastRevenueMonth(account.getLastRevenueMonth());
+        dto.setMonthlyRevenue(account.getMonthlyRevenue());
+        dto.setRevenuePaymentDay(account.getRevenuePaymentDay());
         List<BalanceEntryDto> entries = balanceEntryRepository.findByUserIdOrderByEntryDateDescIdDesc(userId).stream()
                 .map(this::toEntryDto)
                 .toList();

@@ -1,6 +1,6 @@
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Bell, DollarSign, Eye, EyeClosed, Lock, Mail, User } from "lucide-react"
+import { Bell, Eye, EyeClosed, Lock, Mail, User } from "lucide-react"
 import { useEffect, useState } from "react"
 import { api } from "@/services/api"
 import Feedback from "@/components/Feedback"
@@ -16,7 +16,6 @@ export default function Settings(){
     const [profileStatus, setProfileStatus] = useState(null)
     const [passwordMessage, setPasswordMessage] = useState("")
     const [passwordStatus, setPasswordStatus] = useState(null)
-    const [revenue, setRevenue] = useState("")
     const [reminderEnabled, setReminderEnabled] = useState(true)
     const [reminderDays, setReminderDays] = useState([])
     const [reminderMessage, setReminderMessage] = useState("")
@@ -33,7 +32,6 @@ export default function Settings(){
         setLoadError(false)
         api.get("/user/get")
             .then(response => {
-                setRevenue(response.data.revenue ?? "")
                 setEmail(response.data.email)
                 setUsername(response.data.username)
             })
@@ -53,15 +51,8 @@ export default function Settings(){
 
     const updateProfile = () => {
         if (saving) return
-        const parsedRevenue = Number(revenue)
-        if (revenue === "" || !Number.isFinite(parsedRevenue) || parsedRevenue < 0) {
-            setProfileMessage("Informe uma receita maior ou igual a zero")
-            setProfileStatus(false)
-            return
-        }
         setSaving(true)
         api.put('/user/update',{
-            revenue: parsedRevenue,
             email,
             username,
         }).finally(() => setSaving(false))
@@ -136,19 +127,8 @@ return (
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
           <section className="flex flex-col gap-5 rounded-2xl border border-slate-200 bg-slate-100 p-5 shadow-sm lg:p-6">
             <div>
-              <div className="flex items-center gap-2 text-green-900">
-                <DollarSign className="size-5" />
-                <h2 className="text-lg font-semibold">Dados financeiros e perfil</h2>
-              </div>
-              <p className="mt-1 text-sm text-slate-600">Essas alterações não exigem confirmação de senha.</p>
-            </div>
-
-            <div className="space-y-2">
-              <label htmlFor="settings-revenue" className="text-sm font-medium text-green-800">Receita mensal *</label>
-              <div className="relative w-full">
-                <DollarSign className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-green-800" />
-                <Input id="settings-revenue" value={revenue} required type="number" min="0" step="0.01" placeholder="0,00" className="h-11 bg-slate-50 pl-10 pr-10" onChange={(e) => setRevenue(e.target.value)} />
-              </div>
+              <div className="flex items-center gap-2 text-green-900"><User className="size-5" /><h2 className="text-lg font-semibold">Dados do perfil</h2></div>
+              <p className="mt-1 text-sm text-slate-600">A receita mensal e o dia de pagamento são configurados na área de saldo.</p>
             </div>
 
             <div className="space-y-2">

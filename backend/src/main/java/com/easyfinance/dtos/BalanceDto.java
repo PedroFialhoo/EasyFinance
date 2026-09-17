@@ -10,5 +10,7 @@ public class BalanceDto {
     private boolean initialized;
     private double balance;
     private String lastRevenueMonth;
+    private Double monthlyRevenue;
+    private Integer revenuePaymentDay;
     private List<BalanceEntryDto> entries = new ArrayList<>();
 }

@@ -58,7 +58,7 @@ export default function Revenue(){
                     <p className="mt-3 text-2xl font-semibold tracking-tight text-green-900">
                         {loadError ? "Indisponível" : show ? formatCurrency(revenue) : "R$ •••••"}
                     </p>
-                    <p className="mt-1 text-xs text-slate-500">Valor informado no perfil</p>
+                        <p className="mt-1 text-xs text-slate-500">Configurada na área de saldo</p>
                 </div>
 
                 <div className="rounded-xl border border-slate-200 bg-white/90 p-4 shadow-sm backdrop-blur-sm">
@@ -80,7 +80,7 @@ export default function Revenue(){
                     <p className={`mt-3 text-2xl font-semibold tracking-tight ${monthRevenue >= 0 ? "text-green-900" : "text-red-700"}`}>
                         {loadError ? "Indisponível" : show ? formatCurrency(monthRevenue) : "R$ •••••"}
                     </p>
-                    <p className="mt-1 text-xs text-slate-500">Receita menos gastos</p>
+                    <p className="mt-1 text-xs text-slate-500">Receita menos contas previstas neste mês</p>
                 </div>
 
                 <div className="rounded-xl border border-emerald-100 bg-emerald-50/80 p-4 shadow-sm backdrop-blur-sm">

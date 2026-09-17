@@ -25,7 +25,14 @@ export default function ReminderBell() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
 
-  const refreshSummary = () => api.get("/reminders/summary").then(response => setSummary(response.data)).catch(() => {});
+  const refreshSummary = () => api.get("/reminders/summary").then(response => {
+    const dismissed = new Set(JSON.parse(localStorage.getItem("dismissed-reminders") || "[]"));
+    const filterDismissed = reminders => reminders.filter(reminder => !dismissed.has(reminder.installmentId));
+    const overdue = filterDismissed(response.data.overdue);
+    const dueToday = filterDismissed(response.data.dueToday);
+    const upcoming = filterDismissed(response.data.upcoming);
+    setSummary({ pendingCount: overdue.length + dueToday.length + upcoming.length, overdue, dueToday, upcoming });
+  }).catch(() => {});
 
   useEffect(() => {
     const load = () => refreshSummary();
@@ -38,7 +45,15 @@ export default function ReminderBell() {
     };
   }, []);
 
-  const reminders = [...summary.overdue, ...summary.dueToday, ...summary.upcoming].slice(0, 6);
+  const allReminders = [...summary.overdue, ...summary.dueToday, ...summary.upcoming];
+  const reminders = allReminders.slice(0, 6);
+
+  const clearReminders = () => {
+    const dismissed = new Set(JSON.parse(localStorage.getItem("dismissed-reminders") || "[]"));
+    allReminders.forEach(reminder => dismissed.add(reminder.installmentId));
+    localStorage.setItem("dismissed-reminders", JSON.stringify([...dismissed]));
+    setSummary({ pendingCount: 0, overdue: [], dueToday: [], upcoming: [] });
+  };
 
   return (
     <div className="relative">
@@ -50,7 +65,7 @@ export default function ReminderBell() {
         <div className="absolute right-0 z-50 mt-3 w-80 rounded-xl border border-slate-200 bg-white p-3 text-slate-800 shadow-xl">
           <div className="mb-2 flex items-center justify-between px-1">
             <strong>Lembretes</strong>
-            <button type="button" className="text-sm text-green-800 hover:underline" onClick={() => { setOpen(false); navigate("/app/calendar"); }}>Ver calendário</button>
+            <div className="flex items-center gap-3"><button type="button" className="text-sm text-green-800 hover:underline" onClick={clearReminders}>Limpar</button><button type="button" className="text-sm text-green-800 hover:underline" onClick={() => { setOpen(false); navigate("/app/calendar"); }}>Ver calendário</button></div>
           </div>
           {reminders.length === 0 ? <p className="px-1 py-4 text-sm text-slate-500">Nenhuma conta pendente nos próximos 7 dias.</p> : (
             <div className="space-y-1">

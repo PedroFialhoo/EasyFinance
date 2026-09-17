@@ -134,4 +134,34 @@ class BalanceServiceTest {
         assertEquals(80, account.getBalance());
         verify(balanceEntryRepository, times(2)).save(any());
     }
+
+    @Test
+    void getBalanceCreditsTheFullRevenueOnThePaymentDay() {
+        UserSession.setId(1);
+        User user = new User();
+        user.setId(1);
+        BalanceAccount account = new BalanceAccount();
+        account.setUser(user);
+        account.setBalance(100);
+        account.setMonthlyRevenue(500.0);
+        account.setRevenuePaymentDay(LocalDate.now().getDayOfMonth());
+        account.setLastRevenueMonth(YearMonth.now().minusMonths(1).toString());
+
+        when(userRepository.findById(1)).thenReturn(Optional.of(user));
+        when(balanceAccountRepository.findByUserId(1)).thenReturn(Optional.of(account));
+        when(billInstallmentRepository.findPaidByUser(1)).thenReturn(List.of());
+        when(balanceEntryRepository.findByUserIdOrderByEntryDateDescIdDesc(1)).thenReturn(List.of());
+
+        BalanceDto result = balanceService.getBalance();
+
+        assertEquals(600, result.getBalance());
+        assertEquals(YearMonth.now().toString(), account.getLastRevenueMonth());
+        verify(balanceEntryRepository).save(any());
+    }
+
+    @Test
+    void usesTheLastDayForPaymentDaysMissingFromTheMonth() {
+        assertEquals(LocalDate.of(2026, 2, 28), BalanceService.revenueDateFor(YearMonth.of(2026, 2), 31));
+        assertEquals(LocalDate.of(2028, 2, 29), BalanceService.revenueDateFor(YearMonth.of(2028, 2), 31));
+    }
 }

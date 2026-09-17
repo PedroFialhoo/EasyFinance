@@ -20,9 +20,12 @@ export default function Balance() {
   const [initialBalance, setInitialBalance] = useState("")
   const [adjustedBalance, setAdjustedBalance] = useState("")
   const [amountToAdd, setAmountToAdd] = useState("")
+  const [monthlyRevenue, setMonthlyRevenue] = useState("")
+  const [paymentDay, setPaymentDay] = useState("")
   const [description, setDescription] = useState("")
   const [editing, setEditing] = useState(false)
   const [adding, setAdding] = useState(false)
+  const [editingRevenue, setEditingRevenue] = useState(false)
   const [message, setMessage] = useState("")
   const [error, setError] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -108,6 +111,26 @@ export default function Balance() {
     }
   }
 
+  const saveRevenue = async (event) => {
+    event.preventDefault()
+    const day = Number(paymentDay)
+    if (submitting || monthlyRevenue === "" || !Number.isInteger(day) || day < 1 || day > 31) return
+    setSubmitting(true)
+    try {
+      const response = await api.put("/balance/revenue", { revenue: parseCurrencyInput(monthlyRevenue), paymentDay: day })
+      setData(response.data)
+      setEditingRevenue(false)
+      setMessage("Receita mensal atualizada")
+      setError(false)
+      window.dispatchEvent(new Event("balance-updated"))
+    } catch (requestError) {
+      setMessage(requestError.response?.data || "Não foi possível atualizar a receita")
+      setError(true)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   if (!data.initialized) {
     return (
       <main className="app-page">
@@ -130,10 +153,17 @@ export default function Balance() {
     <main className="app-page space-y-6">
       <section className="relative overflow-hidden rounded-2xl bg-green-900 p-6 text-white shadow-sm lg:p-8">
         <CircleDollarSign className="absolute -right-5 -top-5 size-36 text-white/10" />
-        <div className="relative flex flex-wrap items-start justify-between gap-4">
+          <div className="relative flex flex-wrap items-start justify-between gap-4">
           <div><p className="text-sm font-medium uppercase tracking-[0.18em] text-green-200">Saldo disponível</p><h1 className="mt-2 text-3xl font-semibold tracking-tight">{formatCurrency(data.balance)}</h1><p className="mt-2 text-sm text-green-100">Atualizado com receitas e contas efetivamente pagas.</p></div>
           <div className="flex flex-wrap gap-2"><Button type="button" className="bg-white text-green-900 hover:bg-green-50" onClick={() => { setAmountToAdd(""); setDescription(""); setAdding(true); setEditing(false) }}><Plus />Adicionar valor</Button><Button type="button" variant="outline" className="border-white/30 bg-white/10 text-white hover:bg-white/20 hover:text-white" onClick={() => { setAdjustedBalance(formatCurrency(data.balance)); setDescription(""); setEditing(true); setAdding(false) }}><Pencil />Ajustar saldo</Button></div>
         </div>
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 className="text-lg font-semibold text-green-900">Receita mensal</h2><p className="mt-1 text-sm text-slate-600">O valor integral será adicionado ao saldo no dia de pagamento.</p></div><Button type="button" variant="outline" onClick={() => { setMonthlyRevenue(data.monthlyRevenue == null ? "" : formatCurrency(data.monthlyRevenue)); setPaymentDay(data.revenuePaymentDay == null ? "" : String(data.revenuePaymentDay)); setEditingRevenue(!editingRevenue) }}>{editingRevenue ? "Cancelar" : data.monthlyRevenue == null ? "Configurar" : "Editar"}</Button></div>
+        {!editingRevenue && data.monthlyRevenue != null && <p className="mt-4 text-sm text-slate-700"><span className="font-semibold text-green-800">{formatCurrency(data.monthlyRevenue)}</span> todo dia <span className="font-semibold text-green-800">{data.revenuePaymentDay}</span>.</p>}
+        {!editingRevenue && data.monthlyRevenue == null && <p className="mt-4 text-sm text-slate-500">Nenhuma receita mensal configurada.</p>}
+        {editingRevenue && <form className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_160px_auto]" onSubmit={saveRevenue}><div><label htmlFor="monthly-revenue" className="text-sm font-medium text-green-800">Valor mensal *</label><Input id="monthly-revenue" value={monthlyRevenue} required inputMode="decimal" placeholder="0,00" onChange={event => setMonthlyRevenue(formatCurrencyInput(event.target.value))} /></div><div><label htmlFor="payment-day" className="text-sm font-medium text-green-800">Dia do pagamento *</label><Input id="payment-day" value={paymentDay} required type="number" min="1" max="31" onChange={event => setPaymentDay(event.target.value)} /></div><Button type="submit" className="self-end" disabled={monthlyRevenue === "" || !paymentDay || submitting}>{submitting ? "Salvando..." : "Salvar receita"}</Button></form>}
       </section>
 
       {editing && <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="text-lg font-semibold text-green-900">Ajustar saldo</h2><p className="mt-1 text-sm text-slate-600">O valor informado será o novo saldo final e a diferença ficará registrada no histórico.</p><form className="mt-4 flex flex-col gap-3 sm:flex-row" onSubmit={submitAdjustment}><label htmlFor="adjusted-balance" className="sr-only">Novo saldo *</label><Input id="adjusted-balance" value={adjustedBalance} required type="text" inputMode="decimal" onChange={(event) => setAdjustedBalance(formatCurrencyInput(event.target.value))} /><label htmlFor="adjustment-description" className="sr-only">Motivo</label><Input id="adjustment-description" value={description} maxLength="120" placeholder="Motivo opcional" onChange={(event) => setDescription(event.target.value)} /><Button type="submit">Salvar ajuste</Button><Button type="button" variant="outline" onClick={() => setEditing(false)}>Cancelar</Button></form></section>}
